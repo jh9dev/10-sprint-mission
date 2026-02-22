@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userStatus.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.userStatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -9,102 +8,81 @@ import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
 public class BasicUserStatusService implements UserStatusService {
-    private final UserStatusRepository userStatusRepository;
-    private final UserRepository userRepository;
 
-    @Override
-    public UserStatusDto create(UserStatusCreateRequest userStatusCreateRequest) {
-        UUID userId = userStatusCreateRequest.userId();
+  private final UserStatusRepository userStatusRepository;
+  private final UserRepository userRepository;
 
-        if (!userRepository.existsById(userId)) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        if (userStatusRepository.findByUserId(userId).isPresent()) {
-            throw new BusinessException(ErrorCode.USER_STATUS_ALREADY_EXISTS);
-        }
+  @Override
+  public UserStatus create(UserStatusCreateRequest request) {
+    UUID userId = request.userId();
 
-        Instant lastActiveAt = userStatusCreateRequest.lastActiveAt();
-        UserStatus userStatus = new UserStatus(userId, lastActiveAt);
-        userStatusRepository.save(userStatus);
-
-        return toDto(userStatus);
+    // 유저가 존재하는지, 유저 상태가 이미 존재하는지 확인
+    if (!userRepository.existsById(userId)) {
+      throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+    }
+    if (userStatusRepository.findByUserId(userId).isPresent()) {
+      throw new BusinessException(ErrorCode.USER_STATUS_ALREADY_EXISTS);
     }
 
-    @Override
-    public UserStatusDto find(UUID userStatusId) {
-        UserStatus userStatus = userStatusRepository.findById(userStatusId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
-        return toDto(userStatus);
+    Instant lastActiveAt = request.lastActiveAt();
+    // 유저 상태 생성
+    UserStatus userStatus = new UserStatus(userId, lastActiveAt);
+    return userStatusRepository.save(userStatus);
+  }
+
+  @Override
+  public UserStatus find(UUID userStatusId) {
+    return userStatusRepository.findById(userStatusId)
+        .orElseThrow(
+            () -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+  }
+
+  @Override
+  public List<UserStatus> findAll() {
+    return userStatusRepository.findAll().stream()
+        .toList();
+  }
+
+  @Override
+  public UserStatus update(UUID userStatusId, UserStatusUpdateRequest request) {
+    Instant newLastActiveAt = request.newLastActiveAt();
+
+    // 유저 상태 조회
+    UserStatus userStatus = userStatusRepository.findById(userStatusId)
+        .orElseThrow(
+            () -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+    userStatus.update(newLastActiveAt);
+
+    return userStatusRepository.save(userStatus);
+  }
+
+  @Override
+  public UserStatus updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    Instant newLastActiveAt = request.newLastActiveAt();
+
+    // 유저 상태 조회
+    UserStatus userStatus = userStatusRepository.findByUserId(userId)
+        .orElseThrow(
+            () -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+    userStatus.update(newLastActiveAt);
+
+    return userStatusRepository.save(userStatus);
+  }
+
+  @Override
+  public void delete(UUID userStatusId) {
+    if (!userStatusRepository.existsById(userStatusId)) {
+      throw new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND);
     }
-
-    @Override
-    public List<UserStatusDto> findAll() {
-        return userStatusRepository.findAll()
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    @Override
-    public UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest userStatusUpdateRequest) {
-        Instant newLastActiveAt = userStatusUpdateRequest.newLastActiveAt();
-        if (newLastActiveAt == null) {
-            newLastActiveAt = Instant.now();
-        }
-
-        UserStatus userStatus = userStatusRepository.findById(userStatusId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
-
-        userStatus.update(newLastActiveAt);
-        userStatusRepository.save(userStatus);
-
-        return toDto(userStatus);
-    }
-
-    @Override
-    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest userStatusUpdateRequest) {
-        Instant newLastActiveAt = userStatusUpdateRequest.newLastActiveAt();
-        if (newLastActiveAt == null) {
-            newLastActiveAt = Instant.now();
-        }
-
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
-
-        userStatus.update(newLastActiveAt);
-        userStatusRepository.save(userStatus);
-
-        return toDto(userStatus);
-    }
-
-    @Override
-    public void delete(UUID userStatusId) {
-        if (!userStatusRepository.existsById(userStatusId)) {
-            throw new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND);
-        }
-
-        userStatusRepository.deleteById(userStatusId);
-    }
-
-    private UserStatusDto toDto(UserStatus userStatus) {
-        return new UserStatusDto(
-                userStatus.getId(),
-                userStatus.getCreatedAt(),
-                userStatus.getUpdatedAt(),
-                userStatus.getUserId(),
-                userStatus.getLastActiveAt(),
-                userStatus.isOnline()
-        );
-    }
+    userStatusRepository.deleteById(userStatusId);
+  }
 }
