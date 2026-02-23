@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -53,7 +53,7 @@ public class MessageController {
           responseCode = "404",
           description = "채널 또는 유저를 찾을 수 없음",
           content = @Content(
-              schema = @Schema(implementation = ErrorResponse.class),
+              schema = @Schema(implementation = ErrorDto.class),
               examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
@@ -111,7 +111,7 @@ public class MessageController {
           responseCode = "404",
           description = "메시지를 찾을 수 없음",
           content = @Content(
-              schema = @Schema(implementation = ErrorResponse.class),
+              schema = @Schema(implementation = ErrorDto.class),
               examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", \"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
@@ -128,14 +128,13 @@ public class MessageController {
   @Operation(summary = "메시지 삭제 성공")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "204", description = "메시지 삭제 성공",
-          content = @Content(schema = @Schema(implementation = Message.class))
+          responseCode = "204", description = "메시지 삭제 성공"
       ),
       @ApiResponse(
           responseCode = "404",
           description = "메시지를 찾을 수 없음",
           content = @Content(
-              schema = @Schema(implementation = ErrorResponse.class),
+              schema = @Schema(implementation = ErrorDto.class),
               examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", \"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )

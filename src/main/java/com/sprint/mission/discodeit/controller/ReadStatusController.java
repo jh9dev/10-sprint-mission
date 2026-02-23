@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -17,7 +18,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,7 +44,7 @@ public class ReadStatusController {
           responseCode = "404",
           description = "채널 또는 유저를 찾을 수 없음",
           content = @Content(
-              schema = @Schema(implementation = ErrorResponse.class),
+              schema = @Schema(implementation = ErrorDto.class),
               examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
@@ -81,7 +81,7 @@ public class ReadStatusController {
       @ApiResponse(
           responseCode = "404", description = "메시지 읽음 상태를 찾을 수 없음",
           content = @Content(
-              schema = @Schema(implementation = ErrorResponse.class),
+              schema = @Schema(implementation = ErrorDto.class),
               examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"READ_STATUS_NOT_FOUND\", \"message\": \"메시지 읽음 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )

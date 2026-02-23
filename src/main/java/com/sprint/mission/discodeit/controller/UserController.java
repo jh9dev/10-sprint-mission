@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.data.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userStatus.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.ErrorDto;
@@ -128,11 +128,11 @@ public class UserController {
         .body(updatedUser);
   }
 
-  @Operation(summary = "유저 온라인 상태 업데이트")
+  @Operation(summary = "유저 마지막 활동 시각 업데이트")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "유저 온라인 상태 업데이트 성공",
-          content = @Content(schema = @Schema(implementation = User.class))
+          responseCode = "200", description = "유저 마지막 활동 시각 업데이트 성공",
+          content = @Content(schema = @Schema(implementation = UserStatus.class))
       ),
       @ApiResponse(
           responseCode = "404", description = "유저 상태를 찾을 수 없음",

@@ -93,10 +93,12 @@ public class BasicUserService implements UserService {
     String newUsername = userUpdateRequest.newUsername();
     String newEmail = userUpdateRequest.newEmail();
     // 새로운 Email과 Username이 이미 존재하는지 확인
-    if (userRepository.existsByEmail(newEmail)) {
+    if (newEmail != null && !newEmail.equals(user.getEmail()) && userRepository.existsByEmail(
+        newEmail)) {
       throw new BusinessException(ErrorCode.EMAIL_DUPLICATED);
     }
-    if (userRepository.existsByUsername(newUsername)) {
+    if (newUsername != null && !newUsername.equals(user.getUsername())
+        && userRepository.existsByUsername(newUsername)) {
       throw new BusinessException(ErrorCode.USERNAME_DUPLICATED);
     }
 
