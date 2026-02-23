@@ -11,6 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,12 +23,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequiredArgsConstructor
 @Controller
 @ResponseBody
-@RequestMapping("/api/readStatus")
+@RequestMapping("/api/readStatuses")
 public class ReadStatusController {
 
   private final ReadStatusService readStatusService;
 
-  @RequestMapping(path = "create")
+  @PostMapping
   public ResponseEntity<ReadStatus> create(@Valid @RequestBody ReadStatusCreateRequest request) {
     ReadStatus createdReadStatus = readStatusService.create(request);
     return ResponseEntity
@@ -32,8 +36,8 @@ public class ReadStatusController {
         .body(createdReadStatus);
   }
 
-  @RequestMapping(path = "update")
-  public ResponseEntity<ReadStatus> update(@RequestParam("readStatusId") UUID readStatusId,
+  @PatchMapping(path = "/{readStatusId}")
+  public ResponseEntity<ReadStatus> update(@PathVariable UUID readStatusId,
       @Valid @RequestBody ReadStatusUpdateRequest request) {
     ReadStatus updatedReadStatus = readStatusService.update(readStatusId, request);
     return ResponseEntity
@@ -41,7 +45,7 @@ public class ReadStatusController {
         .body(updatedReadStatus);
   }
 
-  @RequestMapping(path = "findAllByUserId")
+  @GetMapping
   public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam("userId") UUID userId) {
     List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
     return ResponseEntity
