@@ -36,7 +36,7 @@ public class BasicReadStatusService implements ReadStatusService {
       throw new BusinessException(ErrorCode.CHANNEL_NOT_FOUND);
     }
 
-    // 유저가 해당 채널에 대한 읽음 상태가 이미 존재하면 반환하고, 없으면 새로 생성해서 저장 후 반환
+    // 유저가 해당 채널에 대한 메시지 읽음 상태가 이미 존재하면 반환하고, 없으면 새로 생성해서 저장 후 반환
     return readStatusRepository.findAllByUserId(userId).stream()
         .filter(readStatus -> readStatus.getChannelId().equals(channelId))
         .findFirst()
@@ -65,7 +65,7 @@ public class BasicReadStatusService implements ReadStatusService {
   @Override
   public ReadStatus update(UUID readStatusId, ReadStatusUpdateRequest request) {
     Instant newLastReadAt = request.newLastReadAt();
-    // 읽음 상태 조회
+    // 메시지 읽음 상태 조회
     ReadStatus readStatus = readStatusRepository.findById(readStatusId)
         .orElseThrow(
             () -> new BusinessException(ErrorCode.READ_STATUS_NOT_FOUND));

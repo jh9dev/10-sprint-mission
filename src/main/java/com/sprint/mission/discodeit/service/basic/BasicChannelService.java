@@ -44,7 +44,7 @@ public class BasicChannelService implements ChannelService {
     Channel channel = new Channel(ChannelType.PRIVATE, null, null);
     Channel createdChannel = channelRepository.save(channel);
 
-    // 참여자의 읽음 상태 생성
+    // 참여자의 메시지 읽음 상태 생성
     request.participantIds().stream()
         .map(userId -> new ReadStatus(userId, createdChannel.getId(), Instant.MIN))
         .forEach(readStatusRepository::save);
@@ -102,7 +102,7 @@ public class BasicChannelService implements ChannelService {
         .orElseThrow(
             () -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
-    // 해당 채널의 메시지와 읽음 상태 삭제
+    // 해당 채널의 메시지와 메시지 읽음 상태 삭제
     messageRepository.deleteAllByChannelId(channel.getId());
     readStatusRepository.deleteAllByChannelId(channel.getId());
 

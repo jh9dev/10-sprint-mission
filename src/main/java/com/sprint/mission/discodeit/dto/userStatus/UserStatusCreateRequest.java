@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record UserStatusCreateRequest(
-    @NotNull(message = "사용자를 확인할 수 없습니다.")
+    @NotNull(message = "유저를 확인할 수 없습니다.")
     UUID userId,
 
     Instant lastActiveAt

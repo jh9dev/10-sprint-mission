@@ -4,13 +4,20 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,16 +25,30 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
-@Controller
-@ResponseBody
+@RestController
 @RequestMapping("/api/readStatuses")
 public class ReadStatusController {
 
   private final ReadStatusService readStatusService;
 
+  @Operation(summary = "메시지 읽음 상태 생성")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "201", description = "메시지 읽음 상태 생성 성공",
+          content = @Content(schema = @Schema(implementation = ReadStatus.class))
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "채널 또는 유저를 찾을 수 없음",
+          content = @Content(
+              schema = @Schema(implementation = ErrorResponse.class),
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+          )
+      )
+  })
   @PostMapping
   public ResponseEntity<ReadStatus> create(@Valid @RequestBody ReadStatusCreateRequest request) {
     ReadStatus createdReadStatus = readStatusService.create(request);
@@ -36,6 +57,35 @@ public class ReadStatusController {
         .body(createdReadStatus);
   }
 
+  @Operation(summary = "유저의 메시지 읽음 상태 목록 조회")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200", description = "유저의 메시지 읽음 상태 목록 조회 성공",
+          content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReadStatus.class)))
+      )
+  })
+  @GetMapping
+  public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam("userId") UUID userId) {
+    List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(readStatuses);
+  }
+
+  @Operation(summary = "메시지 읽음 상태 수정")
+  @ApiResponses(value = {
+      @ApiResponse(
+          responseCode = "200", description = "메시지 읽음 상태 수정 성공",
+          content = @Content(schema = @Schema(implementation = ReadStatus.class))
+      ),
+      @ApiResponse(
+          responseCode = "404", description = "메시지 읽음 상태를 찾을 수 없음",
+          content = @Content(
+              schema = @Schema(implementation = ErrorResponse.class),
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"READ_STATUS_NOT_FOUND\", \"message\": \"메시지 읽음 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+          )
+      )
+  })
   @PatchMapping(path = "/{readStatusId}")
   public ResponseEntity<ReadStatus> update(@PathVariable UUID readStatusId,
       @Valid @RequestBody ReadStatusUpdateRequest request) {
@@ -43,13 +93,5 @@ public class ReadStatusController {
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(updatedReadStatus);
-  }
-
-  @GetMapping
-  public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam("userId") UUID userId) {
-    List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(readStatuses);
   }
 }

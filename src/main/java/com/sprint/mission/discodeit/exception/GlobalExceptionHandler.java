@@ -12,11 +12,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorDto> handleBusinessException(BusinessException e) {
     ErrorCode code = e.getErrorCode();
-    return ResponseEntity.status(code.getHttpStatus()).body(ErrorDto.of(code, e.getMessage()));
+    return ResponseEntity.status(code.getHttpStatus()).body(ErrorDto.of(code));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorDto> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+  public ResponseEntity<ErrorDto> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException e) {
     ErrorCode code = ErrorCode.VALIDATION_ERROR;
 
     String message = e.getBindingResult()
