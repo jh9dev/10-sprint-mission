@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorDto> handleIllegalArgumentException(IllegalArgumentException e) {
-    ErrorCode code = ErrorCode.INVALID_REQUEST;
+    ErrorCode code = ErrorCode.BAD_REQUEST;
     return ResponseEntity.status(code.getHttpStatus()).body(ErrorDto.of(code, e.getMessage()));
   }
 

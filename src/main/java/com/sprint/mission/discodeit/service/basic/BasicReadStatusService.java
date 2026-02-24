@@ -36,17 +36,17 @@ public class BasicReadStatusService implements ReadStatusService {
       throw new BusinessException(ErrorCode.CHANNEL_NOT_FOUND);
     }
 
-    // 유저가 해당 채널에 대한 메시지 읽음 상태가 이미 존재하면 반환하고, 없으면 새로 생성해서 저장 후 반환
-    return readStatusRepository.findAllByUserId(userId).stream()
-        .filter(readStatus -> readStatus.getChannelId().equals(channelId))
-        .findFirst()
-        .orElseGet(
-            () -> {
-              Instant lastReadAt = request.lastReadAt();
-              ReadStatus readStatus = new ReadStatus(userId, channelId, lastReadAt);
-              return readStatusRepository.save(readStatus);
-            }
-        );
+    // 유저가 해당 채널에 대한 메시지 읽음 상태가 이미 존재하면 400 예외 발생
+    boolean exists = readStatusRepository.findAllByUserId(userId).stream()
+        .anyMatch(readStatus -> readStatus.getChannelId().equals(channelId));
+    if (exists) {
+      throw new BusinessException(ErrorCode.READ_STATUS_ALREADY_EXISTS);
+    }
+
+    Instant lastReadAt = request.lastReadAt();
+    ReadStatus readStatus = new ReadStatus(userId, channelId, lastReadAt);
+
+    return readStatusRepository.save(readStatus);
   }
 
   @Override

@@ -25,10 +25,11 @@ public class BasicUserStatusService implements UserStatusService {
   public UserStatus create(UserStatusCreateRequest request) {
     UUID userId = request.userId();
 
-    // 유저가 존재하는지, 유저 상태가 이미 존재하는지 확인
+    // 유저가 존재하는지 확인
     if (!userRepository.existsById(userId)) {
       throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
+    // 유저 상태가 이미 존재한다면 400 예외 발생
     if (userStatusRepository.findByUserId(userId).isPresent()) {
       throw new BusinessException(ErrorCode.USER_STATUS_ALREADY_EXISTS);
     }

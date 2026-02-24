@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -36,30 +37,33 @@ public class AuthController {
           responseCode = "400", description = "요청 검증 실패",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 400, \"error\": \"VALIDATION_ERROR\", \"message\": \"비밀번호를 입력해주세요.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"VALIDATION_ERROR\", "
+                      + "\"message\": \"비밀번호를 입력해주세요.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       ),
       @ApiResponse(
-          responseCode = "401", description = "비밀번호가 일치하지 않음",
+          responseCode = "400", description = "비밀번호가 일치하지 않음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 401, \"error\": \"INVALID_CREDENTIALS\", \"message\": \"유저 이름 또는 비밀번호가 올바르지 않습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"INVALID_CREDENTIALS\", "
+                      + "\"message\": \"유저 이름 또는 비밀번호가 올바르지 않습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       ),
       @ApiResponse(
-          responseCode = "404", description = "유저를 찾을 수 없음",
+          responseCode = "404", description = "사용자를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", "
+                  + "\"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PostMapping(path = "login")
   public ResponseEntity<User> login(
-      @Valid @RequestBody LoginRequest loginRequest) {
+      @Parameter(description = "로그인 정보") @Valid @RequestBody LoginRequest loginRequest) {
     User user = authService.login(loginRequest);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(user);
+    return ResponseEntity.status(HttpStatus.OK).body(user);
   }
 }

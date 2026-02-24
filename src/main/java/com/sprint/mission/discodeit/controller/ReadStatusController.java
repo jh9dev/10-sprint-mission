@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -34,64 +35,72 @@ public class ReadStatusController {
 
   private final ReadStatusService readStatusService;
 
-  @Operation(summary = "메시지 읽음 상태 생성")
+  @Operation(summary = "Message 읽음 상태 생성")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "201", description = "메시지 읽음 상태 생성 성공",
+          responseCode = "201", description = "Message 읽음 상태가 성공적으로 생성됨",
           content = @Content(schema = @Schema(implementation = ReadStatus.class))
       ),
       @ApiResponse(
-          responseCode = "404",
-          description = "채널 또는 유저를 찾을 수 없음",
+          responseCode = "400", description = "이미 읽음 상태가 존재함",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"READ_STATUS_ALREADY_EXISTS\", "
+                      + "\"message\": \"메시지 읽음 상태가 이미 존재합니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+          )
+      ),
+      @ApiResponse(
+          responseCode = "404", description = "Channel 또는 User를 찾을 수 없음",
+          content = @Content(
+              schema = @Schema(implementation = ErrorDto.class),
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", "
+                  + "\"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PostMapping
-  public ResponseEntity<ReadStatus> create(@Valid @RequestBody ReadStatusCreateRequest request) {
+  public ResponseEntity<ReadStatus> create(
+      @Parameter(description = "Message 읽음 상태 생성 정보") @Valid @RequestBody ReadStatusCreateRequest request) {
     ReadStatus createdReadStatus = readStatusService.create(request);
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(createdReadStatus);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdReadStatus);
   }
 
-  @Operation(summary = "유저의 메시지 읽음 상태 목록 조회")
+  @Operation(summary = "User의 Message 읽음 상태 목록 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "유저의 메시지 읽음 상태 목록 조회 성공",
+          responseCode = "200", description = "Message 읽음 상태 목록 조회 성공",
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReadStatus.class)))
       )
   })
   @GetMapping
-  public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam("userId") UUID userId) {
+  public ResponseEntity<List<ReadStatus>> findAllByUserId(
+      @Parameter(description = "조회할 User ID", required = true) @RequestParam("userId") UUID userId) {
     List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(readStatuses);
+    return ResponseEntity.status(HttpStatus.OK).body(readStatuses);
   }
 
-  @Operation(summary = "메시지 읽음 상태 수정")
+  @Operation(summary = "Message 읽음 상태 수정")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "메시지 읽음 상태 수정 성공",
+          responseCode = "200", description = "Message 읽음 상태가 성공적으로 수정됨",
           content = @Content(schema = @Schema(implementation = ReadStatus.class))
       ),
       @ApiResponse(
-          responseCode = "404", description = "메시지 읽음 상태를 찾을 수 없음",
+          responseCode = "404", description = "Message 읽음 상태를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"READ_STATUS_NOT_FOUND\", \"message\": \"메시지 읽음 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"READ_STATUS_NOT_FOUND\", "
+                      + "\"message\": \"메시지 읽음 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PatchMapping(path = "/{readStatusId}")
-  public ResponseEntity<ReadStatus> update(@PathVariable UUID readStatusId,
-      @Valid @RequestBody ReadStatusUpdateRequest request) {
+  public ResponseEntity<ReadStatus> update(
+      @Parameter(description = "수정할 읽음 상태 ID") @PathVariable UUID readStatusId,
+      @Parameter(description = "수정할 읽음 상태 정보") @Valid @RequestBody ReadStatusUpdateRequest request) {
     ReadStatus updatedReadStatus = readStatusService.update(readStatusId, request);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(updatedReadStatus);
+    return ResponseEntity.status(HttpStatus.OK).body(updatedReadStatus);
   }
 }

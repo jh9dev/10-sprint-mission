@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.ChannelService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -37,101 +38,102 @@ public class ChannelController {
 
   private final ChannelService channelService;
 
-  @Operation(summary = "공개 채널 생성")
+  @Operation(summary = "Public Channel 생성")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "201", description = "공개 채널 생성 성공",
+          responseCode = "201", description = "Public Channel이 성공적으로 생성됨",
           content = @Content(schema = @Schema(implementation = Channel.class))
       )
   })
   @PostMapping(path = "/public")
-  public ResponseEntity<Channel> create(@Valid @RequestBody PublicChannelCreateRequest request) {
+  public ResponseEntity<Channel> create(
+      @Parameter(description = "Public Channel 생성 정보") @Valid @RequestBody PublicChannelCreateRequest request) {
     Channel createdChannel = channelService.create(request);
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(createdChannel);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
   }
 
-  @Operation(summary = "비공개 채널 생성")
+  @Operation(summary = "Private Channel 생성")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "201", description = "비공개 채널 생성 성공",
+          responseCode = "201", description = "Private Channel이 성공적으로 생성됨",
           content = @Content(schema = @Schema(implementation = Channel.class))
       )
   })
   @PostMapping(path = "/private")
-  public ResponseEntity<Channel> create(@Valid @RequestBody PrivateChannelCreateRequest request) {
+  public ResponseEntity<Channel> create(
+      @Parameter(description = "Private Channel 생성 정보") @Valid @RequestBody PrivateChannelCreateRequest request) {
     Channel createdChannel = channelService.create(request);
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(createdChannel);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
   }
 
-  @Operation(summary = "유저가 참여 중인 채널 목록 조회")
+  @Operation(summary = "User가 참여 중인 Channel 목록 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "유저가 참여 중인 채널 목록 조회",
+          responseCode = "200", description = "Channel 목록 조회 성공",
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = ChannelDto.class)))
       )
   })
   @GetMapping
-  public ResponseEntity<List<ChannelDto>> findAll(@RequestParam("userId") UUID userId) {
+  public ResponseEntity<List<ChannelDto>> findAll(
+      @Parameter(description = "조회할 User ID") @RequestParam("userId") UUID userId) {
     List<ChannelDto> channels = channelService.findAllByUserId(userId);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(channels);
+    return ResponseEntity.status(HttpStatus.OK).body(channels);
   }
 
-  @Operation(summary = "공개 채널 정보 수정")
+  @Operation(summary = "Channel 정보 수정")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "공개 채널 정보 수정 성공",
+          responseCode = "200", description = "Channel 정보가 성공적으로 수정됨",
           content = @Content(schema = @Schema(implementation = Channel.class))
       ),
       @ApiResponse(
-          responseCode = "403", description = "비공개 채널은 수정 불가",
+          responseCode = "400", description = "Private Channel은 수정할 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 403, \"error\": \"PRIVATE_CHANNEL_UPDATE_FORBIDDEN\", \"message\": \"비공개 채널은 수정할 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED\", "
+                      + "\"message\": \"비공개 채널은 수정할 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       ),
       @ApiResponse(
           responseCode = "404",
-          description = "채널을 찾을 수 없음",
+          description = "Channel을 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"CHANNEL_NOT_FOUND\", \"message\": \"채널을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"CHANNEL_NOT_FOUND\", "
+                      + "\"message\": \"채널을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PatchMapping(path = "/{channelId}")
-  public ResponseEntity<Channel> update(@PathVariable UUID channelId,
-      @Valid @RequestBody PublicChannelUpdateRequest request) {
+  public ResponseEntity<Channel> update(
+      @Parameter(description = "수정할 Channel ID") @PathVariable UUID channelId,
+      @Parameter(description = "수정할 Channel 정보") @Valid @RequestBody PublicChannelUpdateRequest request) {
     Channel udpatedChannel = channelService.update(channelId, request);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(udpatedChannel);
+    return ResponseEntity.status(HttpStatus.OK).body(udpatedChannel);
   }
 
-  @Operation(summary = "채널 삭제")
+  @Operation(summary = "Channel 삭제")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "204", description = "채널 삭제 성공"
+          responseCode = "204", description = "Channel이 성공적으로 삭제됨"
       ),
       @ApiResponse(
           responseCode = "404",
-          description = "채널을 찾을 수 없음",
+          description = "Channel을 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"CHANNEL_NOT_FOUND\", \"message\": \"채널을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"CHANNEL_NOT_FOUND\", "
+                      + "\"message\": \"채널을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @DeleteMapping(path = "/{channelId}")
-  public ResponseEntity<Void> delete(@PathVariable UUID channelId) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "삭제할 Channel ID") @PathVariable UUID channelId) {
     channelService.delete(channelId);
-    return ResponseEntity
-        .status(HttpStatus.NO_CONTENT)
-        .build();
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }

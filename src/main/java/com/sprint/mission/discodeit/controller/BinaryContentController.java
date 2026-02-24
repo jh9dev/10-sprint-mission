@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -28,42 +29,41 @@ public class BinaryContentController {
 
   private final BinaryContentService binaryContentService;
 
-  @Operation(summary = "첨부 파일 단건 조회")
+  @Operation(summary = "첨부 파일 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "첨부 파일 단건 조회 성공",
+          responseCode = "200", description = "첨부 파일 조회 성공",
           content = @Content(schema = @Schema(implementation = BinaryContent.class))
       ),
       @ApiResponse(
           responseCode = "404",
-          description = "파일을 찾을 수 없음",
+          description = "첨부 파일을 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"BINARY_CONTENT_NOT_FOUND\", \"message\": \"파일을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"BINARY_CONTENT_NOT_FOUND\", "
+                      + "\"message\": \"파일을 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @GetMapping(path = "/{binaryContentId}")
-  public ResponseEntity<BinaryContent> find(@PathVariable UUID binaryContentId) {
+  public ResponseEntity<BinaryContent> find(
+      @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId) {
     BinaryContent binaryContent = binaryContentService.find(binaryContentId);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(binaryContent);
+    return ResponseEntity.status(HttpStatus.OK).body(binaryContent);
   }
 
-  @Operation(summary = "첨부 파일 다건 조회")
+  @Operation(summary = "여러 첨부 파일 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "첨부 파일 다건 조회 성공",
+          responseCode = "200", description = "첨부 파일 목록 조회 성공",
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = BinaryContent.class)))
       )
   })
   @GetMapping
   public ResponseEntity<List<BinaryContent>> findAllByIdIn(
-      @RequestParam("binaryContentIds") List<UUID> binaryContentIds) {
+      @Parameter(description = "조회할 첨부 파일 ID 목록") @RequestParam("binaryContentIds") List<UUID> binaryContentIds) {
     List<BinaryContent> binaryContents = binaryContentService.findAllByIdIn(binaryContentIds);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(binaryContents);
+    return ResponseEntity.status(HttpStatus.OK).body(binaryContents);
   }
 }

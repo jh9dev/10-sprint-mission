@@ -89,7 +89,7 @@ public class BasicChannelService implements ChannelService {
 
     // 비공개 채널이라면 수정 불가
     if (channel.getType().equals(ChannelType.PRIVATE)) {
-      throw new BusinessException(ErrorCode.PRIVATE_CHANNEL_UPDATE_FORBIDDEN);
+      throw new BusinessException(ErrorCode.PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED);
     }
 
     channel.update(newName, newDescription);

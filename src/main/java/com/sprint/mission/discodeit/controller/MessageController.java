@@ -43,25 +43,27 @@ public class MessageController {
 
   private final MessageService messageService;
 
-  @Operation(summary = "메시지 생성")
+  @Operation(summary = "Message 생성")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "201", description = "메시지 생성 성공",
+          responseCode = "201", description = "Message가 성공적으로 생성됨",
           content = @Content(schema = @Schema(implementation = Message.class))
       ),
       @ApiResponse(
           responseCode = "404",
-          description = "채널 또는 유저를 찾을 수 없음",
+          description = "Channel 또는 User를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", "
+                  + "\"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Message> create(
-      @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
+      @Parameter(description = "Message 생성 정보", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
       @Valid @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
+      @Parameter(description = "Message 첨부 파일들")
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) {
     List<BinaryContentCreateRequest> attachmentRequests = Optional.ofNullable(attachments)
@@ -80,70 +82,67 @@ public class MessageController {
             .toList())
         .orElse(new ArrayList<>());
     Message createdMessage = messageService.create(messageCreateRequest, attachmentRequests);
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(createdMessage);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
   }
 
-  @Operation(summary = "채널의 메시지 목록 조회")
+  @Operation(summary = "Channel의 Message 목록 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "채널의 메시지 목록 조회 성공",
+          responseCode = "200", description = "Channel의 Message 목록 조회",
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = Message.class)))
       )
   })
   @GetMapping
   public ResponseEntity<List<Message>> findAllByChannelId(
-      @RequestParam("channelId") UUID channelId) {
+      @Parameter(description = "조회할 Channel ID") @RequestParam("channelId") UUID channelId) {
     List<Message> messages = messageService.findAllByChannelId(channelId);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(messages);
+    return ResponseEntity.status(HttpStatus.OK).body(messages);
   }
 
-  @Operation(summary = "메시지 내용 수정")
+  @Operation(summary = "Message 내용 수정")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "메시지 내용 수정 성공",
+          responseCode = "200", description = "Message가 성공적으로 수정됨",
           content = @Content(schema = @Schema(implementation = Message.class))
       ),
       @ApiResponse(
           responseCode = "404",
-          description = "메시지를 찾을 수 없음",
+          description = "Message를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", \"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", "
+                      + "\"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PatchMapping(path = "/{messageId}")
-  public ResponseEntity<Message> update(@PathVariable UUID messageId,
-      @Valid @RequestBody MessageUpdateRequest request) {
+  public ResponseEntity<Message> update(
+      @Parameter(description = "수정할 Message ID") @PathVariable UUID messageId,
+      @Parameter(description = "수정할 Message 내용") @Valid @RequestBody MessageUpdateRequest request) {
     Message updatedMessage = messageService.update(messageId, request);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(updatedMessage);
+    return ResponseEntity.status(HttpStatus.OK).body(updatedMessage);
   }
 
-  @Operation(summary = "메시지 삭제 성공")
+  @Operation(summary = "Message 삭제")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "204", description = "메시지 삭제 성공"
+          responseCode = "204", description = "Message가 성공적으로 삭제됨"
       ),
       @ApiResponse(
-          responseCode = "404",
-          description = "메시지를 찾을 수 없음",
+          responseCode = "404", description = "Message를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", \"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"MESSAGE_NOT_FOUND\", "
+                      + "\"message\": \"메시지를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @DeleteMapping(path = "/{messageId}")
-  public ResponseEntity<Void> delete(@PathVariable UUID messageId) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "삭제할 Message ID") @PathVariable UUID messageId) {
     messageService.delete(messageId);
-    return ResponseEntity
-        .status(HttpStatus.NO_CONTENT)
-        .build();
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }

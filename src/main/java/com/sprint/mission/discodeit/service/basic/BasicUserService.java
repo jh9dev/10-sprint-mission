@@ -36,10 +36,10 @@ public class BasicUserService implements UserService {
 
     // Email과 Username이 이미 존재하는지 확인
     if (userRepository.existsByEmail(email)) {
-      throw new BusinessException(ErrorCode.EMAIL_DUPLICATED);
+      throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
     }
     if (userRepository.existsByUsername(username)) {
-      throw new BusinessException(ErrorCode.USERNAME_DUPLICATED);
+      throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
     }
 
     // 생성할 프로필이 존재한다면 생성, 아니면 null
@@ -95,11 +95,11 @@ public class BasicUserService implements UserService {
     // 새로운 Email과 Username이 이미 존재하는지 확인
     if (newEmail != null && !newEmail.equals(user.getEmail()) && userRepository.existsByEmail(
         newEmail)) {
-      throw new BusinessException(ErrorCode.EMAIL_DUPLICATED);
+      throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
     }
     if (newUsername != null && !newUsername.equals(user.getUsername())
         && userRepository.existsByUsername(newUsername)) {
-      throw new BusinessException(ErrorCode.USERNAME_DUPLICATED);
+      throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
     }
 
     // 생성할 프로필이 존재한다면 기존 프로필 삭제 후 생성, 아니면 null

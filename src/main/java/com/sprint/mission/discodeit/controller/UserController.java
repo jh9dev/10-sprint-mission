@@ -46,67 +46,68 @@ public class UserController {
   private final UserService userService;
   private final UserStatusService userStatusService;
 
-  @Operation(summary = "유저 생성")
+  @Operation(summary = "User 등록")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "201", description = "유저 생성 성공",
+          responseCode = "201", description = "User가 성공적으로 생성됨",
           content = @Content(schema = @Schema(implementation = User.class))
       ),
       @ApiResponse(
-          responseCode = "409", description = "이미 존재하는 username 또는 email은 사용 불가",
+          responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 409, \"error\": \"EMAIL_DUPLICATED\", \"message\": \"사용 중인 이메일입니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"EMAIL_ALREADY_EXISTS\", "
+                      + "\"message\": \"사용 중인 이메일입니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<User> create(
-      @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
+      @Parameter(description = "User 생성 정보", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
       @Valid @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile profile
+      @Parameter(description = "User 프로필 이미지") @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
     Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
         .flatMap(this::resolveProfileRequest);
     User createdUser = userService.create(userCreateRequest, profileRequest);
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(createdUser);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 
-  @Operation(summary = "전체 유저 조회")
+  @Operation(summary = "전체 User 목록 조회")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "전체 유저 조회 성공",
+          responseCode = "200", description = "User 목록 조회 성공",
           content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDto.class)))
       )
   })
   @GetMapping
   public ResponseEntity<List<UserDto>> findAll() {
     List<UserDto> users = userService.findAll();
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(users);
+    return ResponseEntity.status(HttpStatus.OK).body(users);
   }
 
-  @Operation(summary = "유저 정보 수정")
+  @Operation(summary = "User 정보 수정")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "유저 정보 수정 성공",
+          responseCode = "200", description = "User 정보가 성공적으로 수정됨",
           content = @Content(schema = @Schema(implementation = User.class))
       ),
       @ApiResponse(
-          responseCode = "404", description = "유저를 찾을 수 없음",
+          responseCode = "404", description = "User를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", "
+                  + "\"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       ),
       @ApiResponse(
-          responseCode = "409", description = "이미 존재하는 username 또는 email은 사용 불가",
+          responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 409, \"error\": \"EMAIL_DUPLICATED\", \"message\": \"사용 중인 이메일입니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 400, \"error\": \"EMAIL_ALREADY_EXISTS\", "
+                      + "\"message\": \"사용 중인 이메일입니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
@@ -115,61 +116,60 @@ public class UserController {
       consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
   )
   public ResponseEntity<User> update(
-      @PathVariable UUID userId,
-      @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
+      @Parameter(description = "수정할 User ID") @PathVariable UUID userId,
+      @Parameter(description = "수정할 User 정보", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
       @Valid @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile profile
+      @Parameter(description = "수정할 User 프로필 이미지") @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
     Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
         .flatMap(this::resolveProfileRequest);
     User updatedUser = userService.update(userId, userUpdateRequest, profileRequest);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(updatedUser);
+    return ResponseEntity.status(HttpStatus.OK).body(updatedUser);
   }
 
-  @Operation(summary = "유저 마지막 활동 시각 업데이트")
+  @Operation(summary = "User 온라인 상태 업데이트")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "200", description = "유저 마지막 활동 시각 업데이트 성공",
+          responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨",
           content = @Content(schema = @Schema(implementation = UserStatus.class))
       ),
       @ApiResponse(
-          responseCode = "404", description = "유저 상태를 찾을 수 없음",
+          responseCode = "404", description = "해당 User의 UserStatus를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_STATUS_NOT_FOUND\", \"message\": \"유저 상태 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value =
+                  "{ \"status\": 404, \"error\": \"USER_STATUS_NOT_FOUND\", "
+                      + "\"message\": \"유저 상태 정보를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @PatchMapping(path = "/{userId}/userStatus")
-  public ResponseEntity<UserStatus> updateUserStatusByUserId(@PathVariable UUID userId,
-      @Valid @RequestBody UserStatusUpdateRequest request) {
+  public ResponseEntity<UserStatus> updateUserStatusByUserId(
+      @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
+      @Parameter(description = "변경할 User 온라인 상태 정보") @Valid @RequestBody UserStatusUpdateRequest request) {
     UserStatus updatedUserStatus = userStatusService.updateByUserId(userId, request);
-    return ResponseEntity
-        .status(HttpStatus.OK)
-        .body(updatedUserStatus);
+    return ResponseEntity.status(HttpStatus.OK).body(updatedUserStatus);
   }
 
-  @Operation(summary = "유저 삭제")
+  @Operation(summary = "User 삭제")
   @ApiResponses(value = {
       @ApiResponse(
-          responseCode = "204", description = "유저 삭제 성공"
+          responseCode = "204", description = "User가 성공적으로 삭제됨"
       ),
       @ApiResponse(
-          responseCode = "404", description = "유저를 찾을 수 없음",
+          responseCode = "404", description = "User를 찾을 수 없음",
           content = @Content(
               schema = @Schema(implementation = ErrorDto.class),
-              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", \"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
+              examples = @ExampleObject(value = "{ \"status\": 404, \"error\": \"USER_NOT_FOUND\", "
+                  + "\"message\": \"유저를 찾을 수 없습니다.\", \"time\": \"2026-02-23T05:23:49.657764500Z\" }")
           )
       )
   })
   @DeleteMapping(path = "/{userId}")
-  public ResponseEntity<Void> delete(@PathVariable UUID userId) {
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "삭제할 User ID") @PathVariable UUID userId) {
     userService.delete(userId);
-    return ResponseEntity
-        .status(HttpStatus.NO_CONTENT)
-        .build();
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   private Optional<BinaryContentCreateRequest> resolveProfileRequest(MultipartFile profileFile) {
