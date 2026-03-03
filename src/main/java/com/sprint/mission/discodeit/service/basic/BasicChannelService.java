@@ -46,7 +46,7 @@ public class BasicChannelService implements ChannelService {
 
     // 참여자의 메시지 읽음 상태 생성
     request.participantIds().stream()
-        .map(userId -> new ReadStatus(userId, createdChannel.getId(), Instant.MIN))
+        .map(userId -> new ReadStatus(userId, createdChannel.getId(), channel.getCreatedAt()))
         .forEach(readStatusRepository::save);
 
     return createdChannel;
