@@ -46,9 +46,9 @@ public class ChannelController {
       )
   })
   @PostMapping(path = "/public")
-  public ResponseEntity<Channel> create(
+  public ResponseEntity<ChannelDto> create(
       @Parameter(description = "Public Channel 생성 정보") @Valid @RequestBody PublicChannelCreateRequest request) {
-    Channel createdChannel = channelService.create(request);
+    ChannelDto createdChannel = channelService.create(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
   }
 
@@ -60,9 +60,9 @@ public class ChannelController {
       )
   })
   @PostMapping(path = "/private")
-  public ResponseEntity<Channel> create(
+  public ResponseEntity<ChannelDto> create(
       @Parameter(description = "Private Channel 생성 정보") @Valid @RequestBody PrivateChannelCreateRequest request) {
-    Channel createdChannel = channelService.create(request);
+    ChannelDto createdChannel = channelService.create(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
   }
 
@@ -107,11 +107,11 @@ public class ChannelController {
       )
   })
   @PatchMapping(path = "/{channelId}")
-  public ResponseEntity<Channel> update(
+  public ResponseEntity<ChannelDto> update(
       @Parameter(description = "수정할 Channel ID") @PathVariable UUID channelId,
       @Parameter(description = "수정할 Channel 정보") @Valid @RequestBody PublicChannelUpdateRequest request) {
-    Channel udpatedChannel = channelService.update(channelId, request);
-    return ResponseEntity.status(HttpStatus.OK).body(udpatedChannel);
+    ChannelDto updatedChannel = channelService.update(channelId, request);
+    return ResponseEntity.status(HttpStatus.OK).body(updatedChannel);
   }
 
   @Operation(summary = "Channel 삭제")

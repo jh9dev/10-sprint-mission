@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -47,9 +48,9 @@ public class BinaryContentController {
       )
   })
   @GetMapping(path = "/{binaryContentId}")
-  public ResponseEntity<BinaryContent> find(
+  public ResponseEntity<BinaryContentDto> find(
       @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId) {
-    BinaryContent binaryContent = binaryContentService.find(binaryContentId);
+    BinaryContentDto binaryContent = binaryContentService.find(binaryContentId);
     return ResponseEntity.status(HttpStatus.OK).body(binaryContent);
   }
 
@@ -61,9 +62,9 @@ public class BinaryContentController {
       )
   })
   @GetMapping
-  public ResponseEntity<List<BinaryContent>> findAllByIdIn(
+  public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(
       @Parameter(description = "조회할 첨부 파일 ID 목록") @RequestParam("binaryContentIds") List<UUID> binaryContentIds) {
-    List<BinaryContent> binaryContents = binaryContentService.findAllByIdIn(binaryContentIds);
+    List<BinaryContentDto> binaryContents = binaryContentService.findAllByIdIn(binaryContentIds);
     return ResponseEntity.status(HttpStatus.OK).body(binaryContents);
   }
 }

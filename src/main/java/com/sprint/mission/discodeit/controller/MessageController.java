@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.data.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
@@ -60,7 +61,7 @@ public class MessageController {
       )
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<Message> create(
+  public ResponseEntity<MessageDto> create(
       @Parameter(description = "Message 생성 정보", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
       @Valid @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @Parameter(description = "Message 첨부 파일들")
@@ -81,7 +82,7 @@ public class MessageController {
             })
             .toList())
         .orElse(new ArrayList<>());
-    Message createdMessage = messageService.create(messageCreateRequest, attachmentRequests);
+    MessageDto createdMessage = messageService.create(messageCreateRequest, attachmentRequests);
     return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
   }
 
@@ -93,9 +94,9 @@ public class MessageController {
       )
   })
   @GetMapping
-  public ResponseEntity<List<Message>> findAllByChannelId(
+  public ResponseEntity<List<MessageDto>> findAllByChannelId(
       @Parameter(description = "조회할 Channel ID") @RequestParam("channelId") UUID channelId) {
-    List<Message> messages = messageService.findAllByChannelId(channelId);
+    List<MessageDto> messages = messageService.findAllByChannelId(channelId);
     return ResponseEntity.status(HttpStatus.OK).body(messages);
   }
 
@@ -117,10 +118,10 @@ public class MessageController {
       )
   })
   @PatchMapping(path = "/{messageId}")
-  public ResponseEntity<Message> update(
+  public ResponseEntity<MessageDto> update(
       @Parameter(description = "수정할 Message ID") @PathVariable UUID messageId,
       @Parameter(description = "수정할 Message 내용") @Valid @RequestBody MessageUpdateRequest request) {
-    Message updatedMessage = messageService.update(messageId, request);
+    MessageDto updatedMessage = messageService.update(messageId, request);
     return ResponseEntity.status(HttpStatus.OK).body(updatedMessage);
   }
 
