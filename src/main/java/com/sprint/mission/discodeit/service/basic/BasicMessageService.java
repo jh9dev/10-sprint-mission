@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
@@ -19,12 +19,17 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,7 +87,7 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public MessageDto find(UUID messageId) {
-    return messageRepository.findById(messageId)
+    return messageRepository.findWithDetailsById(messageId)
         .map(messageMapper::toDto)
         .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
   }
@@ -90,19 +95,29 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   @Override
   public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
-    Slice<MessageDto> messageSlice = messageRepository.findByChannelId(channelId,
-            normalizePageable(pageable))
-        .map(messageMapper::toDto);
-    return pageResponseMapper.fromSlice(messageSlice);
+    Slice<UUID> messageIdSlice = messageRepository.findIdsByChannelId(channelId,
+        normalizePageable(pageable));
+
+    List<MessageDto> messageDtos = loadMessagesInRequestedOrder(
+        messageIdSlice.getContent()).stream()
+        .map(messageMapper::toDto)
+        .toList();
+
+    Slice<MessageDto> dtoSlice = new SliceImpl<>(
+        messageDtos,
+        messageIdSlice.getPageable(),
+        messageIdSlice.hasNext()
+    );
+
+    return pageResponseMapper.fromSlice(dtoSlice);
   }
 
   @Override
   public MessageDto update(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
     String newContent = messageUpdateRequest.newContent();
-    // 메시지 조회
+
     Message message = messageRepository.findById(messageId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
+        .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
 
     message.update(newContent);
 
@@ -111,7 +126,6 @@ public class BasicMessageService implements MessageService {
 
   @Override
   public void delete(UUID messageId) {
-    // 메시지 조회
     Message message = messageRepository.findById(messageId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
 
@@ -121,5 +135,21 @@ public class BasicMessageService implements MessageService {
   private Pageable normalizePageable(Pageable pageable) {
     int pageNumber = pageable == null ? 0 : Math.max(pageable.getPageNumber(), 0);
     return PageRequest.of(pageNumber, MESSAGE_PAGE_SIZE, MESSAGE_SORT);
+  }
+
+  private List<Message> loadMessagesInRequestedOrder(List<UUID> messageIds) {
+    if (messageIds.isEmpty()) {
+      return List.of();
+    }
+
+    Map<UUID, Integer> orderByMessageId = new HashMap<>();
+    for (int i = 0; i < messageIds.size(); i++) {
+      orderByMessageId.put(messageIds.get(i), i);
+    }
+
+    List<Message> messages = new ArrayList<>(
+        messageRepository.findAllWithDetailsByIdIn(messageIds));
+    messages.sort(Comparator.comparingInt(message -> orderByMessageId.get(message.getId())));
+    return messages;
   }
 }

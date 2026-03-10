@@ -89,7 +89,7 @@ public class BasicUserService implements UserService {
   @Transactional(readOnly = true)
   @Override
   public List<UserDto> findAll() {
-    return userRepository.findAll().stream()
+    return userRepository.findAllWithProfileAndUserStatus().stream()
         .map(userMapper::toDto)
         .toList();
   }
@@ -103,6 +103,7 @@ public class BasicUserService implements UserService {
 
     String newUsername = userUpdateRequest.newUsername();
     String newEmail = userUpdateRequest.newEmail();
+
     // 새로운 Email과 Username이 이미 존재하는지 확인
     if (newEmail != null && !newEmail.equals(user.getEmail()) && userRepository.existsByEmail(
         newEmail)) {

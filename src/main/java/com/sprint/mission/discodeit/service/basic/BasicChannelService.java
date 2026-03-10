@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
@@ -11,13 +12,18 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.BusinessException;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +38,7 @@ public class BasicChannelService implements ChannelService {
   private final ReadStatusRepository readStatusRepository;
   private final MessageRepository messageRepository;
   private final ChannelMapper channelMapper;
+  private final UserMapper userMapper;
 
   @Override
   public ChannelDto create(PublicChannelCreateRequest publicChannelCreateRequest) {
@@ -62,33 +69,21 @@ public class BasicChannelService implements ChannelService {
     channel.getReadStatuses().addAll(readStatuses);
     readStatusRepository.saveAll(readStatuses);
 
-    return channelMapper.toDto(channel);
+    return buildChannelDto(List.of(channel)).get(0);
   }
 
   @Transactional(readOnly = true)
   @Override
   public ChannelDto find(UUID channelId) {
-    return channelRepository.findById(channelId)
-        .map(channelMapper::toDto)
+    Channel channel = channelRepository.findById(channelId)
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+    return buildChannelDto(List.of(channel)).get(0);
   }
 
   @Transactional(readOnly = true)
   @Override
   public List<ChannelDto> findAllByUserId(UUID userId) {
-    // 유저의 참여 채널 목록 조회
-    List<UUID> mySubscribedChannelIds = readStatusRepository.findAllByUserId(userId).stream()
-        .map(r -> r.getChannel().getId())
-        .toList();
-
-    // 공개 채널이거나 유저가 참여하고 있는 채널의 목록 반환
-    return channelRepository.findAll().stream()
-        .filter(c ->
-            c.getType().equals(ChannelType.PUBLIC)
-                || mySubscribedChannelIds.contains(c.getId())
-        )
-        .map(channelMapper::toDto)
-        .toList();
+    return buildChannelDto(channelRepository.findAllVisibleByUserId(userId));
   }
 
   @Override
@@ -98,8 +93,7 @@ public class BasicChannelService implements ChannelService {
 
     // 채널 조회
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+        .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
     // 비공개 채널이라면 수정 불가
     if (channel.getType().equals(ChannelType.PRIVATE)) {
@@ -114,13 +108,62 @@ public class BasicChannelService implements ChannelService {
   @Override
   public void delete(UUID channelId) {
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+        .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
     // 해당 채널의 메시지와 메시지 읽음 상태 삭제
     messageRepository.deleteAllByChannelId(channel.getId());
     readStatusRepository.deleteAllByChannelId(channel.getId());
 
     channelRepository.deleteById(channelId);
+  }
+
+  private List<ChannelDto> buildChannelDto(List<Channel> channels) {
+    if (channels.isEmpty()) {
+      return List.of();
+    }
+
+    List<UUID> channelIds = channels.stream()
+        .map(Channel::getId)
+        .toList();
+
+    Map<UUID, Instant> lastMessageAtByChannelId = messageRepository
+        .findLastMessageAtByChannelIdIn(channelIds).stream()
+        .collect(Collectors.toMap(
+            MessageRepository.ChannelLastMessageAtProjection::getChannelId,
+            MessageRepository.ChannelLastMessageAtProjection::getLastMessageAt
+        ));
+
+    List<UUID> privateChannelIds = channels.stream()
+        .filter(channel -> ChannelType.PRIVATE.equals(channel.getType()))
+        .map(Channel::getId)
+        .toList();
+
+    Map<UUID, List<UserDto>> participantsByChannelId = buildParticipantsByChannelId(
+        privateChannelIds);
+
+    return channels.stream()
+        .map(channel -> new ChannelDto(
+            channel.getId(),
+            channel.getType(),
+            channel.getName(),
+            channel.getDescription(),
+            participantsByChannelId.getOrDefault(channel.getId(), List.of()),
+            lastMessageAtByChannelId.get(channel.getId())
+        ))
+        .toList();
+  }
+
+  private Map<UUID, List<UserDto>> buildParticipantsByChannelId(List<UUID> privateChannelIds) {
+    if (privateChannelIds.isEmpty()) {
+      return Map.of();
+    }
+
+    return readStatusRepository.findAllByChannelIdInWithUser(privateChannelIds).stream()
+        .collect(Collectors.groupingBy(
+            readStatus -> readStatus.getChannel().getId(),
+            LinkedHashMap::new,
+            Collectors.mapping(readStatus -> userMapper.toDto(readStatus.getUser()),
+                Collectors.toList())
+        ));
   }
 }
