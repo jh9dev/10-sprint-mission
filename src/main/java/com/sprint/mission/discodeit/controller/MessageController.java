@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.data.MessageDto;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
-import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +52,7 @@ public class MessageController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "201", description = "Message가 성공적으로 생성됨",
-          content = @Content(schema = @Schema(implementation = Message.class))
+          content = @Content(schema = @Schema(implementation = MessageDto.class))
       ),
       @ApiResponse(
           responseCode = "404",
@@ -90,13 +94,16 @@ public class MessageController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "200", description = "Channel의 Message 목록 조회",
-          content = @Content(array = @ArraySchema(schema = @Schema(implementation = Message.class)))
+          content = @Content(array = @ArraySchema(schema = @Schema(implementation = MessageDto.class)))
       )
   })
   @GetMapping
-  public ResponseEntity<List<MessageDto>> findAllByChannelId(
-      @Parameter(description = "조회할 Channel ID") @RequestParam("channelId") UUID channelId) {
-    List<MessageDto> messages = messageService.findAllByChannelId(channelId);
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+      @Parameter(description = "조회할 Channel ID") @RequestParam("channelId") UUID channelId,
+      @ParameterObject
+      @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC)
+      Pageable pageable) {
+    PageResponse<MessageDto> messages = messageService.findAllByChannelId(channelId, pageable);
     return ResponseEntity.status(HttpStatus.OK).body(messages);
   }
 
@@ -104,7 +111,7 @@ public class MessageController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "200", description = "Message가 성공적으로 수정됨",
-          content = @Content(schema = @Schema(implementation = Message.class))
+          content = @Content(schema = @Schema(implementation = MessageDto.class))
       ),
       @ApiResponse(
           responseCode = "404",

@@ -63,6 +63,18 @@ public enum ErrorCode {
   CONFLICT(HttpStatus.CONFLICT, "요청이 충돌했습니다."),
 
   // 500
+  @Schema(description = "로컬 파일 저장소 초기화에 실패했습니다. (500)")
+  BINARY_CONTENT_STORAGE_INIT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "로컬 파일 저장소 초기화에 실패했습니다."),
+
+  @Schema(description = "파일 저장에 실패했습니다. (500)")
+  BINARY_CONTENT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
+
+  @Schema(description = "파일 조회에 실패했습니다. (500)")
+  BINARY_CONTENT_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 조회에 실패했습니다."),
+
+  @Schema(description = "파일 삭제에 실패했습니다. (500)")
+  BINARY_CONTENT_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
+
   @Schema(description = "서버 내부 오류가 발생했습니다. (500)")
   INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 

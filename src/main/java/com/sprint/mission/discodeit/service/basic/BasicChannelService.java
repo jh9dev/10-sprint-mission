@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.data.ChannelDto;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
@@ -59,6 +59,7 @@ public class BasicChannelService implements ChannelService {
         .map(u -> new ReadStatus(u, channel, channel.getCreatedAt()))
         .toList();
 
+    channel.getReadStatuses().addAll(readStatuses);
     readStatusRepository.saveAll(readStatuses);
 
     return channelMapper.toDto(channel);

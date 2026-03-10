@@ -1,9 +1,8 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.data.ReadStatusDto;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.exception.ErrorDto;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +39,7 @@ public class ReadStatusController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "201", description = "Message 읽음 상태가 성공적으로 생성됨",
-          content = @Content(schema = @Schema(implementation = ReadStatus.class))
+          content = @Content(schema = @Schema(implementation = ReadStatusDto.class))
       ),
       @ApiResponse(
           responseCode = "400", description = "이미 읽음 상태가 존재함",
@@ -71,7 +70,7 @@ public class ReadStatusController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "200", description = "Message 읽음 상태 목록 조회 성공",
-          content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReadStatus.class)))
+          content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReadStatusDto.class)))
       )
   })
   @GetMapping
@@ -85,7 +84,7 @@ public class ReadStatusController {
   @ApiResponses(value = {
       @ApiResponse(
           responseCode = "200", description = "Message 읽음 상태가 성공적으로 수정됨",
-          content = @Content(schema = @Schema(implementation = ReadStatus.class))
+          content = @Content(schema = @Schema(implementation = ReadStatusDto.class))
       ),
       @ApiResponse(
           responseCode = "404", description = "Message 읽음 상태를 찾을 수 없음",
