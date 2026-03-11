@@ -60,9 +60,22 @@ public class User extends BaseUpdatableEntity {
   }
 
   public void setUserStatus(UserStatus userStatus) {
-    this.userStatus = userStatus;
-    if (userStatus != null && userStatus.getUser() != this) {
-      userStatus.setUser(this);
+    if (this.userStatus == userStatus) {
+      return;
     }
+
+    if (this.userStatus != null) {
+      this.userStatus.assignUser(null);
+    }
+
+    this.userStatus = userStatus;
+
+    if (userStatus != null && userStatus.getUser() != this) {
+      userStatus.assignUser(this);
+    }
+  }
+
+  public void removeUserStatus() {
+    setUserStatus(null);
   }
 }

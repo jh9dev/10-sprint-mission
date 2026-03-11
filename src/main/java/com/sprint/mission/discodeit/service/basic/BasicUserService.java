@@ -12,7 +12,6 @@ import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
@@ -31,7 +30,6 @@ public class BasicUserService implements UserService {
   private final UserRepository userRepository;
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentStorage binaryContentStorage;
-  private final UserStatusRepository userStatusRepository;
   private final UserMapper userMapper;
 
   @Override
@@ -50,30 +48,23 @@ public class BasicUserService implements UserService {
 
     // 생성할 프로필이 존재한다면 생성, 아니면 null
     BinaryContent nullableProfile = optionalProfileCreateRequest
-        .map(profileRequest -> {
-          String fileName = profileRequest.fileName();
-          String contentType = profileRequest.contentType();
-          byte[] bytes = profileRequest.bytes();
-          BinaryContent binaryContent = new BinaryContent(
-              fileName,
-              (long) bytes.length,
-              contentType);
-          binaryContentRepository.save(binaryContent);
-          binaryContentStorage.put(binaryContent.getId(), bytes);
-          return binaryContent;
-        })
+        .map(profileRequest -> new BinaryContent(
+            profileRequest.fileName(),
+            (long) profileRequest.bytes().length,
+            profileRequest.contentType()))
         .orElse(null);
 
     String password = userCreateRequest.password();
 
     // 유저 생성
     User user = new User(username, email, password, nullableProfile);
+    new UserStatus(user, Instant.now());
+
     User createdUser = userRepository.save(user);
 
-    // 유저 상태 생성, 마지막 활동 시각은 현재 시각으로 저장
-    UserStatus userStatus = new UserStatus(createdUser, Instant.now());
-    createdUser.setUserStatus(userStatus);
-    userStatusRepository.save(userStatus);
+    optionalProfileCreateRequest.ifPresent(
+        profileRequest -> binaryContentStorage.put(createdUser.getProfile().getId(),
+            profileRequest.bytes()));
 
     return userMapper.toDto(createdUser);
   }
@@ -81,7 +72,7 @@ public class BasicUserService implements UserService {
   @Transactional(readOnly = true)
   @Override
   public UserDto find(UUID userId) {
-    return userRepository.findById(userId)
+    return userRepository.findDetailById(userId)
         .map(userMapper::toDto)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
   }
@@ -97,8 +88,7 @@ public class BasicUserService implements UserService {
   @Override
   public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
       Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
-    // 유저 조회
-    User user = userRepository.findById(userId)
+    User user = userRepository.findDetailById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     String newUsername = userUpdateRequest.newUsername();
@@ -123,7 +113,7 @@ public class BasicUserService implements UserService {
     user.update(newUsername, newEmail, newPassword, nullableProfile);
 
     if (nullableProfile != null && previousProfile != null) {
-      deleteBinaryContent(previousProfile);
+      binaryContentStorage.delete(previousProfile.getId());
     }
 
     return userMapper.toDto(user);
@@ -131,13 +121,12 @@ public class BasicUserService implements UserService {
 
   @Override
   public void delete(UUID userId) {
-    User user = userRepository.findById(userId)
+    User user = userRepository.findDetailById(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     // 프로필이 존재한다면 삭제
     Optional.ofNullable(user.getProfile())
         .ifPresent(profile -> binaryContentStorage.delete(profile.getId()));
-    userStatusRepository.deleteByUserId(userId);
 
     userRepository.delete(user);
   }
@@ -153,10 +142,5 @@ public class BasicUserService implements UserService {
     binaryContentRepository.save(binaryContent);
     binaryContentStorage.put(binaryContent.getId(), bytes);
     return binaryContent;
-  }
-
-  private void deleteBinaryContent(BinaryContent binaryContent) {
-    binaryContentStorage.delete(binaryContent.getId());
-    binaryContentRepository.delete(binaryContent);
   }
 }

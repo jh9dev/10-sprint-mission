@@ -12,10 +12,8 @@ import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "user_statuses")
@@ -29,8 +27,10 @@ public class UserStatus extends BaseUpdatableEntity {
   private Instant lastActiveAt;
 
   public UserStatus(User user, Instant lastActiveAt) {
-    this.user = user;
     this.lastActiveAt = lastActiveAt;
+    if (user != null) {
+      user.setUserStatus(this);
+    }
   }
 
   public void update(Instant lastActiveAt) {
@@ -43,5 +43,9 @@ public class UserStatus extends BaseUpdatableEntity {
     Instant instantFiveMinutesAgo = Instant.now().minus(Duration.ofMinutes(5));
 
     return lastActiveAt.isAfter(instantFiveMinutesAgo);
+  }
+
+  void assignUser(User user) {
+    this.user = user;
   }
 }

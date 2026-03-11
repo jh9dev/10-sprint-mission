@@ -33,7 +33,7 @@ public class BasicUserStatusService implements UserStatusService {
     User user = userRepository.findById(userStatusCreateRequest.userId())
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    // 유저 상태가 이미 존재한다면 400 예외 발생
+    // 유저 상태가 이미 존재한다면 예외 발생
     if (userStatusRepository.findByUserId(user.getId()).isPresent()) {
       throw new BusinessException(ErrorCode.USER_STATUS_ALREADY_EXISTS);
     }
@@ -49,7 +49,7 @@ public class BasicUserStatusService implements UserStatusService {
   @Transactional(readOnly = true)
   @Override
   public UserStatusDto find(UUID userStatusId) {
-    return userStatusRepository.findById(userStatusId)
+    return userStatusRepository.findDetailById(userStatusId)
         .map(userStatusMapper::toDto)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
   }
@@ -57,7 +57,7 @@ public class BasicUserStatusService implements UserStatusService {
   @Transactional(readOnly = true)
   @Override
   public List<UserStatusDto> findAll() {
-    return userStatusRepository.findAll().stream()
+    return userStatusRepository.findAllWithUser().stream()
         .map(userStatusMapper::toDto)
         .toList();
   }
@@ -66,10 +66,8 @@ public class BasicUserStatusService implements UserStatusService {
   public UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest userStatusUpdateRequest) {
     Instant newLastActiveAt = userStatusUpdateRequest.newLastActiveAt();
 
-    // 유저 상태 조회
-    UserStatus userStatus = userStatusRepository.findById(userStatusId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+    UserStatus userStatus = userStatusRepository.findDetailById(userStatusId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
 
     userStatus.update(newLastActiveAt);
 
@@ -83,8 +81,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     // 유저 상태 조회
     UserStatus userStatus = userStatusRepository.findByUserId(userId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
 
     userStatus.update(newLastActiveAt);
 
@@ -93,8 +90,14 @@ public class BasicUserStatusService implements UserStatusService {
 
   @Override
   public void delete(UUID userStatusId) {
-    UserStatus userStatus = userStatusRepository.findById(userStatusId)
+    UserStatus userStatus = userStatusRepository.findDetailById(userStatusId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_STATUS_NOT_FOUND));
+
+    User user = userStatus.getUser();
+    if (user != null) {
+      user.removeUserStatus();
+      return;
+    }
 
     userStatusRepository.delete(userStatus);
   }
