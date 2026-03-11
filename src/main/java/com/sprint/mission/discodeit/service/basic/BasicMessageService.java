@@ -120,9 +120,10 @@ public class BasicMessageService implements MessageService {
 
   @Override
   public void delete(UUID messageId) {
-    Message message = messageRepository.findById(messageId)
+    Message message = messageRepository.findWithDetailsById(messageId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
 
+    message.getAttachments().forEach(attachment -> binaryContentStorage.delete(attachment.getId()));
     messageRepository.delete(message);
   }
 

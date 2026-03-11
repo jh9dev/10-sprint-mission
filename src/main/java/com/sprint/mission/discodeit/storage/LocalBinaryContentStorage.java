@@ -66,6 +66,16 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
   }
 
   @Override
+  public void delete(UUID id) {
+    Path target = resolvePath(id);
+    try {
+      Files.deleteIfExists(target);
+    } catch (IOException e) {
+      throw new BusinessException(ErrorCode.BINARY_CONTENT_DELETE_FAILED);
+    }
+  }
+
+  @Override
   public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
     InputStream inputStream = get(binaryContentDto.id());
     Resource resource = new InputStreamResource(inputStream);

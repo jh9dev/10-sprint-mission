@@ -114,27 +114,17 @@ public class BasicUserService implements UserService {
       throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
     }
 
-    // 생성할 프로필이 존재한다면 기존 프로필 삭제 후 생성, 아니면 null
+    BinaryContent previousProfile = user.getProfile();
     BinaryContent nullableProfile = optionalProfileCreateRequest
-        .map(profileRequest -> {
-          Optional.ofNullable(user.getProfile())
-              .ifPresent(binaryContentRepository::delete);
-
-          String fileName = profileRequest.fileName();
-          String contentType = profileRequest.contentType();
-          byte[] bytes = profileRequest.bytes();
-          BinaryContent binaryContent = new BinaryContent(
-              fileName,
-              (long) bytes.length,
-              contentType);
-          binaryContentRepository.save(binaryContent);
-          binaryContentStorage.put(binaryContent.getId(), bytes);
-          return binaryContent;
-        })
+        .map(this::createBinaryContent)
         .orElse(null);
 
     String newPassword = userUpdateRequest.newPassword();
     user.update(newUsername, newEmail, newPassword, nullableProfile);
+
+    if (nullableProfile != null && previousProfile != null) {
+      deleteBinaryContent(previousProfile);
+    }
 
     return userMapper.toDto(user);
   }
@@ -146,9 +136,27 @@ public class BasicUserService implements UserService {
 
     // 프로필이 존재한다면 삭제
     Optional.ofNullable(user.getProfile())
-        .ifPresent(binaryContentRepository::delete);
+        .ifPresent(profile -> binaryContentStorage.delete(profile.getId()));
     userStatusRepository.deleteByUserId(userId);
 
     userRepository.delete(user);
+  }
+
+  private BinaryContent createBinaryContent(BinaryContentCreateRequest profileRequest) {
+    String fileName = profileRequest.fileName();
+    String contentType = profileRequest.contentType();
+    byte[] bytes = profileRequest.bytes();
+    BinaryContent binaryContent = new BinaryContent(
+        fileName,
+        (long) bytes.length,
+        contentType);
+    binaryContentRepository.save(binaryContent);
+    binaryContentStorage.put(binaryContent.getId(), bytes);
+    return binaryContent;
+  }
+
+  private void deleteBinaryContent(BinaryContent binaryContent) {
+    binaryContentStorage.delete(binaryContent.getId());
+    binaryContentRepository.delete(binaryContent);
   }
 }

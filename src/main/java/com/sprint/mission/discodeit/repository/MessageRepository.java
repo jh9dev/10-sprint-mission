@@ -55,6 +55,14 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
   Slice<Message> findByChannelId(UUID channelId, Pageable pageable);
 
+  @Query("""
+      SELECT DISTINCT m
+      FROM Message m
+      LEFT JOIN FETCH m.attachments
+      WHERE m.channel.id = :channelId
+      """)
+  List<Message> findAllByChannelIdWithAttachments(@Param("channelId") UUID channelId);
+
   void deleteByChannelId(UUID channelId);
 
   interface ChannelLastMessageAtProjection {

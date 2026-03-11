@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.BusinessException;
@@ -18,6 +19,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +39,7 @@ public class BasicChannelService implements ChannelService {
   private final UserRepository userRepository;
   private final ReadStatusRepository readStatusRepository;
   private final MessageRepository messageRepository;
+  private final BinaryContentStorage binaryContentStorage;
   private final ChannelMapper channelMapper;
   private final UserMapper userMapper;
 
@@ -62,9 +65,8 @@ public class BasicChannelService implements ChannelService {
 
     Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
 
-    Instant now = Instant.now();
     List<ReadStatus> readStatuses = users.stream()
-        .map(user -> new ReadStatus(user, channel, now))
+        .map(user -> new ReadStatus(user, channel, channel.getCreatedAt()))
         .toList();
 
     readStatusRepository.saveAll(readStatuses);
@@ -109,7 +111,13 @@ public class BasicChannelService implements ChannelService {
       throw new BusinessException(ErrorCode.CHANNEL_NOT_FOUND);
     }
 
-    messageRepository.deleteByChannelId(channelId);
+    List<Message> messages = messageRepository.findAllByChannelIdWithAttachments(channelId);
+    messages.stream()
+        .flatMap(message -> message.getAttachments().stream())
+        .forEach(attachment -> binaryContentStorage.delete(attachment.getId()));
+
+    messageRepository.deleteAll(messages);
+    readStatusRepository.deleteAllByChannelId(channelId);
     channelRepository.deleteById(channelId);
   }
 
