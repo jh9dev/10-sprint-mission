@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -51,15 +52,12 @@ public class BasicMessageService implements MessageService {
   @Override
   public MessageDto create(MessageCreateRequest messageCreateRequest,
       List<BinaryContentCreateRequest> binaryContentCreateRequests) {
-    // 채널 검색
     Channel channel = channelRepository.findById(messageCreateRequest.channelId())
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
-    // 유저 검색
     User author = userRepository.findById(messageCreateRequest.authorId())
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-    // 바이너리 컨텐츠 생성
     List<BinaryContent> attachments = binaryContentCreateRequests.stream()
         .map(attachment -> new BinaryContent(
             attachment.fileName(),
@@ -70,11 +68,14 @@ public class BasicMessageService implements MessageService {
 
     Message message = new Message(messageCreateRequest.content(), channel, author);
     message.addAttachments(attachments);
+
     Message savedMessage = messageRepository.save(message);
 
     for (int i = 0; i < attachments.size(); i++) {
-      binaryContentStorage.put(attachments.get(i).getId(),
-          binaryContentCreateRequests.get(i).bytes());
+      binaryContentStorage.put(
+          attachments.get(i).getId(),
+          binaryContentCreateRequests.get(i).bytes()
+      );
     }
 
     return find(savedMessage.getId());
@@ -90,14 +91,21 @@ public class BasicMessageService implements MessageService {
 
   @Transactional(readOnly = true)
   @Override
-  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
-    Slice<UUID> messageIdSlice = messageRepository.findIdsByChannelId(channelId,
-        normalizePageable(pageable));
+  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor,
+      Pageable pageable) {
+    Pageable normalizedPageable = normalizePageable(pageable);
 
-    List<MessageDto> messageDtoList = loadMessagesInRequestedOrder(
-        messageIdSlice.getContent()).stream()
-        .map(messageMapper::toDto)
-        .toList();
+    Slice<UUID> messageIdSlice = cursor == null
+        ? messageRepository.findIdsByChannelId(channelId, normalizedPageable)
+        : messageRepository.findIdsByChannelIdBeforeCursor(channelId, cursor, normalizedPageable);
+
+    List<Message> messages = loadMessagesInRequestedOrder(messageIdSlice.getContent());
+    List<MessageDto> messageDtoList = messageMapper.toDtoList(messages);
+
+    Instant nextCursor = null;
+    if (messageIdSlice.hasNext() && !messages.isEmpty()) {
+      nextCursor = messages.get(messages.size() - 1).getCreatedAt();
+    }
 
     Slice<MessageDto> dtoSlice = new SliceImpl<>(
         messageDtoList,
@@ -105,7 +113,7 @@ public class BasicMessageService implements MessageService {
         messageIdSlice.hasNext()
     );
 
-    return pageResponseMapper.fromSlice(dtoSlice);
+    return pageResponseMapper.fromSlice(dtoSlice, nextCursor);
   }
 
   @Override
@@ -114,7 +122,6 @@ public class BasicMessageService implements MessageService {
         .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
 
     message.update(messageUpdateRequest.newContent());
-
     return find(message.getId());
   }
 
@@ -128,8 +135,7 @@ public class BasicMessageService implements MessageService {
   }
 
   private Pageable normalizePageable(Pageable pageable) {
-    int pageNumber = pageable == null ? 0 : Math.max(pageable.getPageNumber(), 0);
-    return PageRequest.of(pageNumber, MESSAGE_PAGE_SIZE, MESSAGE_SORT);
+    return PageRequest.of(0, MESSAGE_PAGE_SIZE, MESSAGE_SORT);
   }
 
   private List<Message> loadMessagesInRequestedOrder(List<UUID> messageIds) {
@@ -143,7 +149,9 @@ public class BasicMessageService implements MessageService {
     }
 
     List<Message> messages = new ArrayList<>(
-        messageRepository.findAllWithDetailsByIdIn(messageIds));
+        messageRepository.findAllWithDetailsByIdIn(messageIds)
+    );
+
     messages.sort(Comparator.comparingInt(message -> orderByMessageId.get(message.getId())));
     return messages;
   }

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.mapper;
 
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.entity.Message;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -10,4 +11,6 @@ public interface MessageMapper {
 
   @Mapping(target = "channelId", source = "channel.id")
   MessageDto toDto(Message message);
+
+  List<MessageDto> toDtoList(List<Message> messages);
 }

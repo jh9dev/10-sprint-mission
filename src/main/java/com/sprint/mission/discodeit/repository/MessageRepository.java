@@ -18,7 +18,22 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
       FROM Message m
       WHERE m.channel.id = :channelId
       """)
-  Slice<UUID> findIdsByChannelId(@Param("channelId") UUID channelId, Pageable pageable);
+  Slice<UUID> findIdsByChannelId(
+      @Param("channelId") UUID channelId,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT m.id
+      FROM Message m
+      WHERE m.channel.id = :channelId
+        AND m.createdAt < :cursor
+      """)
+  Slice<UUID> findIdsByChannelIdBeforeCursor(
+      @Param("channelId") UUID channelId,
+      @Param("cursor") Instant cursor,
+      Pageable pageable
+  );
 
   @Query("""
       SELECT DISTINCT m
@@ -45,15 +60,15 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
   Optional<Message> findWithDetailsById(@Param("messageId") UUID messageId);
 
   @Query("""
-      SELECT m.channel.id as channelId, max(m.createdAt) as lastMessageAt
+      SELECT m.channel.id as channelId,
+             max(m.createdAt) as lastMessageAt
       FROM Message m
       WHERE m.channel.id in :channelIds
       GROUP BY m.channel.id
       """)
   List<ChannelLastMessageAtProjection> findLastMessageAtByChannelIdIn(
-      @Param("channelIds") List<UUID> channelIds);
-
-  Slice<Message> findByChannelId(UUID channelId, Pageable pageable);
+      @Param("channelIds") List<UUID> channelIds
+  );
 
   @Query("""
       SELECT DISTINCT m
