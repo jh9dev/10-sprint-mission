@@ -6,38 +6,35 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "users")
 public class User extends BaseUpdatableEntity {
 
-  @Column(name = "username", length = 50, nullable = false, unique = true)
+  @Column(length = 50, nullable = false, unique = true)
   private String username;
 
-  @Column(name = "email", length = 100, nullable = false, unique = true)
+  @Column(length = 100, nullable = false, unique = true)
   private String email;
 
-  @Column(name = "password", length = 60, nullable = false)
+  @Column(length = 60, nullable = false)
   private String password;
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST,
+      CascadeType.REMOVE}, orphanRemoval = true)
   @JoinColumn(name = "profile_id", unique = true)
   private BinaryContent profile;
 
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST,
+      CascadeType.REMOVE}, orphanRemoval = true)
   private UserStatus userStatus;
-
-  @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
-  private List<ReadStatus> readStatuses = new ArrayList<>();
 
   public User(String username, String email, String password, BinaryContent profile) {
     this.username = username;
@@ -66,13 +63,6 @@ public class User extends BaseUpdatableEntity {
     this.userStatus = userStatus;
     if (userStatus != null && userStatus.getUser() != this) {
       userStatus.setUser(this);
-    }
-  }
-
-  public void clearUserStatus() {
-    if (this.userStatus != null) {
-      this.userStatus.setUser(null);
-      this.userStatus = null;
     }
   }
 }

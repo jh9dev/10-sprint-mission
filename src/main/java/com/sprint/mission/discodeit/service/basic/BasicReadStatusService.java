@@ -41,8 +41,7 @@ public class BasicReadStatusService implements ReadStatusService {
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
     // 유저가 해당 채널에 대한 메시지 읽음 상태가 이미 존재하면 400 예외 발생
-    boolean exists = readStatusRepository.findAllByUserId(user.getId()).stream()
-        .anyMatch(readStatus -> readStatus.getChannel().getId().equals(channel.getId()));
+    boolean exists = readStatusRepository.existsByUserIdAndChannelId(user.getId(), channel.getId());
     if (exists) {
       throw new BusinessException(ErrorCode.READ_STATUS_ALREADY_EXISTS);
     }

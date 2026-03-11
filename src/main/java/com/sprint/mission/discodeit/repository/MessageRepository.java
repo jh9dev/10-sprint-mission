@@ -55,7 +55,7 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
   Slice<Message> findByChannelId(UUID channelId, Pageable pageable);
 
-  void deleteAllByChannelId(UUID channelId);
+  void deleteByChannelId(UUID channelId);
 
   interface ChannelLastMessageAtProjection {
 

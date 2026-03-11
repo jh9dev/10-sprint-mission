@@ -9,11 +9,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "read_statuses",
     uniqueConstraints = @UniqueConstraint(
@@ -23,15 +24,15 @@ import lombok.NoArgsConstructor;
 )
 public class ReadStatus extends BaseUpdatableEntity {
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "channel_id", nullable = false)
   private Channel channel;
 
-  @Column(name = "last_read_at", nullable = false)
+  @Column(nullable = false)
   private Instant lastReadAt;
 
   public ReadStatus(User user, Channel channel, Instant lastReadAt) {

@@ -53,8 +53,6 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   public ChannelDto create(PrivateChannelCreateRequest privateChannelCreateRequest) {
-    Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
-
     List<UUID> participantIds = privateChannelCreateRequest.participantIds();
     List<User> users = userRepository.findAllById(participantIds);
 
@@ -62,11 +60,13 @@ public class BasicChannelService implements ChannelService {
       throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
 
+    Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
+
+    Instant now = Instant.now();
     List<ReadStatus> readStatuses = users.stream()
-        .map(u -> new ReadStatus(u, channel, channel.getCreatedAt()))
+        .map(user -> new ReadStatus(user, channel, now))
         .toList();
 
-    channel.getReadStatuses().addAll(readStatuses);
     readStatusRepository.saveAll(readStatuses);
 
     return buildChannelDto(List.of(channel)).get(0);
@@ -91,11 +91,9 @@ public class BasicChannelService implements ChannelService {
     String newName = publicChannelUpdateRequest.newName();
     String newDescription = publicChannelUpdateRequest.newDescription();
 
-    // 채널 조회
     Channel channel = channelRepository.findById(channelId)
         .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
 
-    // 비공개 채널이라면 수정 불가
     if (channel.getType().equals(ChannelType.PRIVATE)) {
       throw new BusinessException(ErrorCode.PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED);
     }
@@ -107,13 +105,11 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   public void delete(UUID channelId) {
-    Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.CHANNEL_NOT_FOUND));
+    if (!channelRepository.existsById(channelId)) {
+      throw new BusinessException(ErrorCode.CHANNEL_NOT_FOUND);
+    }
 
-    // 해당 채널의 메시지와 메시지 읽음 상태 삭제
-    messageRepository.deleteAllByChannelId(channel.getId());
-    readStatusRepository.deleteAllByChannelId(channel.getId());
-
+    messageRepository.deleteByChannelId(channelId);
     channelRepository.deleteById(channelId);
   }
 
@@ -142,11 +138,8 @@ public class BasicChannelService implements ChannelService {
         privateChannelIds);
 
     return channels.stream()
-        .map(channel -> new ChannelDto(
-            channel.getId(),
-            channel.getType(),
-            channel.getName(),
-            channel.getDescription(),
+        .map(channel -> channelMapper.toDto(
+            channel,
             participantsByChannelId.getOrDefault(channel.getId(), List.of()),
             lastMessageAtByChannelId.get(channel.getId())
         ))

@@ -9,22 +9,23 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "user_statuses")
 public class UserStatus extends BaseUpdatableEntity {
 
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
+  @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false, unique = true)
   private User user;
 
-  @Column(name = "last_active_at", nullable = false)
+  @Column(nullable = false)
   private Instant lastActiveAt;
 
   public UserStatus(User user, Instant lastActiveAt) {

@@ -13,7 +13,6 @@ import com.sprint.mission.discodeit.exception.BusinessException;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -45,7 +44,6 @@ public class BasicMessageService implements MessageService {
   private final MessageRepository messageRepository;
   private final ChannelRepository channelRepository;
   private final UserRepository userRepository;
-  private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentStorage binaryContentStorage;
   private final MessageMapper messageMapper;
   private final PageResponseMapper pageResponseMapper;
@@ -63,25 +61,23 @@ public class BasicMessageService implements MessageService {
 
     // 바이너리 컨텐츠 생성
     List<BinaryContent> attachments = binaryContentCreateRequests.stream()
-        .map(attachment -> {
-          String fileName = attachment.fileName();
-          String contentType = attachment.contentType();
-          byte[] bytes = attachment.bytes();
-          BinaryContent binaryContent = new BinaryContent(
-              fileName,
-              (long) bytes.length,
-              contentType);
-          binaryContentRepository.save(binaryContent);
-          binaryContentStorage.put(binaryContent.getId(), bytes);
-          return binaryContent;
-        })
+        .map(attachment -> new BinaryContent(
+            attachment.fileName(),
+            (long) attachment.bytes().length,
+            attachment.contentType()
+        ))
         .toList();
 
     Message message = new Message(messageCreateRequest.content(), channel, author);
-    message.setAttachments(attachments);
-    messageRepository.save(message);
+    message.addAttachments(attachments);
+    Message savedMessage = messageRepository.save(message);
 
-    return messageMapper.toDto(message);
+    for (int i = 0; i < attachments.size(); i++) {
+      binaryContentStorage.put(attachments.get(i).getId(),
+          binaryContentCreateRequests.get(i).bytes());
+    }
+
+    return find(savedMessage.getId());
   }
 
   @Transactional(readOnly = true)
@@ -98,13 +94,13 @@ public class BasicMessageService implements MessageService {
     Slice<UUID> messageIdSlice = messageRepository.findIdsByChannelId(channelId,
         normalizePageable(pageable));
 
-    List<MessageDto> messageDtos = loadMessagesInRequestedOrder(
+    List<MessageDto> messageDtoList = loadMessagesInRequestedOrder(
         messageIdSlice.getContent()).stream()
         .map(messageMapper::toDto)
         .toList();
 
     Slice<MessageDto> dtoSlice = new SliceImpl<>(
-        messageDtos,
+        messageDtoList,
         messageIdSlice.getPageable(),
         messageIdSlice.hasNext()
     );
@@ -114,14 +110,12 @@ public class BasicMessageService implements MessageService {
 
   @Override
   public MessageDto update(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
-    String newContent = messageUpdateRequest.newContent();
-
     Message message = messageRepository.findById(messageId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_NOT_FOUND));
 
-    message.update(newContent);
+    message.update(messageUpdateRequest.newContent());
 
-    return messageMapper.toDto(message);
+    return find(message.getId());
   }
 
   @Override

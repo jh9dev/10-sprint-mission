@@ -10,30 +10,25 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "channels")
 public class Channel extends BaseUpdatableEntity {
 
-  @Column(name = "name", length = 100)
+  @Column(length = 100)
   private String name;
 
-  @Column(name = "description", length = 500)
+  @Column(length = 500)
   private String description;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "type", nullable = false)
+  @Column(nullable = false)
   private ChannelType type;
-
-  @OneToMany(mappedBy = "channel", cascade = CascadeType.REMOVE, orphanRemoval = true)
-  private List<Message> messages = new ArrayList<>();
-
-  @OneToMany(mappedBy = "channel", cascade = CascadeType.REMOVE)
-  private List<ReadStatus> readStatuses = new ArrayList<>();
 
   public Channel(String name, String description, ChannelType type) {
     this.name = name;
@@ -48,21 +43,5 @@ public class Channel extends BaseUpdatableEntity {
     if (newDescription != null && !newDescription.equals(this.description)) {
       this.description = newDescription;
     }
-  }
-
-  public void addMessage(Message message) {
-    if (message == null) {
-      return;
-    }
-    this.messages.add(message);
-    message.setChannel(this);
-  }
-
-  public void removeMessage(Message message) {
-    if (message == null) {
-      return;
-    }
-    this.messages.remove(message);
-    message.setChannel(null);
   }
 }

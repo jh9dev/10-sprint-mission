@@ -10,6 +10,11 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
+  @Override
+  @EntityGraph(attributePaths = {"profile", "userStatus"})
+  Optional<User> findById(UUID userId);
+
+  @EntityGraph(attributePaths = {"profile", "userStatus"})
   Optional<User> findByUsername(String username);
 
   boolean existsByEmail(String email);

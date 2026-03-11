@@ -13,6 +13,10 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
   List<ReadStatus> findAllByChannelId(UUID channelId);
 
+  void deleteAllByChannelId(UUID channelId);
+
+  boolean existsByUserIdAndChannelId(UUID userId, UUID channelId);
+
   @Query("""
       SELECT rs
       FROM ReadStatus rs
@@ -23,6 +27,4 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
       WHERE c.id IN :channelIds
       """)
   List<ReadStatus> findAllByChannelIdInWithUser(@Param("channelIds") List<UUID> channelIds);
-
-  void deleteAllByChannelId(UUID channelId);
 }
