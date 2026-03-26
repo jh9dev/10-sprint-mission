@@ -79,18 +79,18 @@ public enum ErrorCode {
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
-    private final String defaultMessage;
+    private final String message;
 
-    ErrorCode(HttpStatus httpStatus, String defaultMessage) {
+    ErrorCode(HttpStatus httpStatus, String message) {
         this.httpStatus = httpStatus;
-        this.defaultMessage = defaultMessage;
+        this.message = message;
     }
 
     public HttpStatus getHttpStatus() {
         return httpStatus;
     }
 
-    public String getDefaultMessage() {
-        return defaultMessage;
+    public String getMessage() {
+        return message;
     }
 }
