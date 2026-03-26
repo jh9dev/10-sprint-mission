@@ -10,7 +10,6 @@ import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
@@ -19,15 +18,16 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final UserMapper userMapper;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
@@ -39,34 +39,45 @@ public class BasicUserService implements UserService {
         String username = userCreateRequest.username();
         String email = userCreateRequest.email();
 
+        log.debug("사용자 생성 시작: email={}, username={}", email, username);
+
         if (userRepository.existsByEmail(email)) {
+            log.warn("사용자 생성 실패 - 이메일 중복: email={}", email);
             throw new IllegalArgumentException("User with email " + email + " already exists");
         }
         if (userRepository.existsByUsername(username)) {
+            log.warn("사용자 생성 실패 - username 중복: username={}", username);
             throw new IllegalArgumentException(
                     "User with username " + username + " already exists");
         }
+        try {
+            BinaryContent nullableProfile = optionalProfileCreateRequest
+                    .map(profileRequest -> {
+                        String fileName = profileRequest.fileName();
+                        String contentType = profileRequest.contentType();
+                        byte[] bytes = profileRequest.bytes();
+                        BinaryContent binaryContent = new BinaryContent(fileName,
+                                (long) bytes.length,
+                                contentType);
+                        binaryContentRepository.save(binaryContent);
+                        binaryContentStorage.put(binaryContent.getId(), bytes);
+                        return binaryContent;
+                    })
+                    .orElse(null);
+            String password = userCreateRequest.password();
 
-        BinaryContent nullableProfile = optionalProfileCreateRequest
-                .map(profileRequest -> {
-                    String fileName = profileRequest.fileName();
-                    String contentType = profileRequest.contentType();
-                    byte[] bytes = profileRequest.bytes();
-                    BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
-                            contentType);
-                    binaryContentRepository.save(binaryContent);
-                    binaryContentStorage.put(binaryContent.getId(), bytes);
-                    return binaryContent;
-                })
-                .orElse(null);
-        String password = userCreateRequest.password();
+            User user = new User(username, email, password, nullableProfile);
+            Instant now = Instant.now();
+            UserStatus userStatus = new UserStatus(user, now);
 
-        User user = new User(username, email, password, nullableProfile);
-        Instant now = Instant.now();
-        UserStatus userStatus = new UserStatus(user, now);
+            userRepository.save(user);
+            log.info("사용자 생성 완료: userId={}, email={}", user.getId(), user.getEmail());
 
-        userRepository.save(user);
-        return userMapper.toDto(user);
+            return userMapper.toDto(user);
+        } catch (Exception e) {
+            log.error("사용자 생성 중 예외 발생: email={}, username={}", email, username, e);
+            throw e;
+        }
     }
 
     @Override
@@ -89,47 +100,71 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
             Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
+        log.debug("사용자 수정 시작: userId={}", userId);
+
         User user = userRepository.findById(userId)
                 .orElseThrow(
-                        () -> new NoSuchElementException("User with id " + userId + " not found"));
+                        () -> {
+                            log.warn("사용자 수정 실패 - 사용자 없음: userId={}", userId);
+                            return new NoSuchElementException(
+                                    "User with id " + userId + " not found");
+                        });
 
         String newUsername = userUpdateRequest.newUsername();
         String newEmail = userUpdateRequest.newEmail();
         if (userRepository.existsByEmail(newEmail)) {
+            log.warn("사용자 수정 실패 - 이메일 중복: email={}", newEmail);
             throw new IllegalArgumentException("User with email " + newEmail + " already exists");
         }
         if (userRepository.existsByUsername(newUsername)) {
+            log.warn("사용자 수정 실패 - username 중복: username={}", newUsername);
             throw new IllegalArgumentException(
                     "User with username " + newUsername + " already exists");
         }
 
-        BinaryContent nullableProfile = optionalProfileCreateRequest
-                .map(profileRequest -> {
+        try {
+            BinaryContent nullableProfile = optionalProfileCreateRequest
+                    .map(profileRequest -> {
 
-                    String fileName = profileRequest.fileName();
-                    String contentType = profileRequest.contentType();
-                    byte[] bytes = profileRequest.bytes();
-                    BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
-                            contentType);
-                    binaryContentRepository.save(binaryContent);
-                    binaryContentStorage.put(binaryContent.getId(), bytes);
-                    return binaryContent;
-                })
-                .orElse(null);
+                        String fileName = profileRequest.fileName();
+                        String contentType = profileRequest.contentType();
+                        byte[] bytes = profileRequest.bytes();
+                        BinaryContent binaryContent = new BinaryContent(fileName,
+                                (long) bytes.length,
+                                contentType);
+                        binaryContentRepository.save(binaryContent);
+                        binaryContentStorage.put(binaryContent.getId(), bytes);
+                        return binaryContent;
+                    })
+                    .orElse(null);
 
-        String newPassword = userUpdateRequest.newPassword();
-        user.update(newUsername, newEmail, newPassword, nullableProfile);
+            String newPassword = userUpdateRequest.newPassword();
+            user.update(newUsername, newEmail, newPassword, nullableProfile);
 
-        return userMapper.toDto(user);
+            log.info("사용자 수정 완료. userId={}", userId);
+            return userMapper.toDto(user);
+        } catch (Exception e) {
+            log.error("사용자 수정 중 예외 발생: userId={}", userId, e);
+            throw e;
+        }
     }
 
     @Transactional
     @Override
     public void delete(UUID userId) {
+        log.debug("사용자 삭제 시작: userId={}", userId);
+
         if (!userRepository.existsById(userId)) {
+            log.warn("사용자 삭제 실패 - 사용자 없음: userId={}", userId);
             throw new NoSuchElementException("User with id " + userId + " not found");
         }
 
-        userRepository.deleteById(userId);
+        try {
+            userRepository.deleteById(userId);
+            log.info("사용자 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("사용자 삭제 중 예외 발생: userId={}", userId, e);
+            throw e;
+        }
     }
 }
