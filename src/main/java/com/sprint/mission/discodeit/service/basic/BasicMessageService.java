@@ -50,20 +50,20 @@ public class BasicMessageService implements MessageService {
         UUID authorId = messageCreateRequest.authorId();
         int attachmentCount = binaryContentCreateRequests.size();
 
-        log.debug("메시지 생성 시작: channelId={}, authorId={}, attachmentCount={}",
+        log.debug("[MESSAGE_CREATE] 메시지 생성 시작: channelId={}, authorId={}, attachmentCount={}",
                 channelId, authorId, attachmentCount);
 
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(
                         () -> {
-                            log.warn("메시지 생성 실패 - 채널 없음: channelId={}", channelId);
+                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 채널 없음: channelId={}", channelId);
                             return new NoSuchElementException(
                                     "Channel with id " + channelId + " does not exist");
                         });
         User author = userRepository.findById(authorId)
                 .orElseThrow(
                         () -> {
-                            log.warn("메시지 생성 실패 - 작성자 없음: authorId={}", authorId);
+                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 작성자 없음: authorId={}", authorId);
                             return new NoSuchElementException(
                                     "Author with id " + authorId + " does not exist");
                         });
@@ -94,11 +94,12 @@ public class BasicMessageService implements MessageService {
 
             messageRepository.save(message);
 
-            log.info("메시지 생성 완료: messageId={}, channelId={}, authorId={}",
+            log.info("[MESSAGE_CREATE] 메시지 생성 완료: messageId={}, channelId={}, authorId={}",
                     message.getId(), channelId, authorId);
             return messageMapper.toDto(message);
         } catch (Exception e) {
-            log.error("메시지 생성 중 예외 발생: channelId={}, authorId={}", channelId, authorId, e);
+            log.error("[MESSAGE_CREATE] 메시지 생성 중 예외 발생: channelId={}, authorId={}", channelId,
+                    authorId, e);
             throw e;
         }
     }
@@ -135,12 +136,13 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto update(UUID messageId, MessageUpdateRequest request) {
         String newContent = request.newContent();
-        log.debug("메시지 수정 시작: messageId={}", messageId);
+        log.debug("[MESSAGE_UPDATE] 메시지 수정 시작: messageId={}", messageId);
 
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(
                         () -> {
-                            log.warn("메시지 수정 실패 - 메시지 없음: messageId={}", messageId);
+                            log.warn("[MESSAGE_UPDATE] 메시지 수정 실패 - 메시지 없음: messageId={}",
+                                    messageId);
                             return new NoSuchElementException(
                                     "Message with id " + messageId + " not found");
                         });
@@ -148,10 +150,10 @@ public class BasicMessageService implements MessageService {
         try {
             message.update(newContent);
 
-            log.info("메시지 수정 완료: messageId={}", messageId);
+            log.info("[MESSAGE_UPDATE] 메시지 수정 완료: messageId={}", messageId);
             return messageMapper.toDto(message);
         } catch (Exception e) {
-            log.error("메시지 수정 중 예외 발생: messageId={}", messageId, e);
+            log.error("[MESSAGE_UPDATE] 메시지 수정 중 예외 발생: messageId={}", messageId, e);
             throw e;
         }
     }
@@ -159,19 +161,19 @@ public class BasicMessageService implements MessageService {
     @Transactional
     @Override
     public void delete(UUID messageId) {
-        log.debug("메시지 삭제 시작: messageId={}", messageId);
+        log.debug("[MESSAGE_DELETE] 메시지 삭제 시작: messageId={}", messageId);
 
         if (!messageRepository.existsById(messageId)) {
-            log.warn("메시지 삭제 실패 - 메시지 없음: messageId={}", messageId);
+            log.warn("[MESSAGE_DELETE] 메시지 삭제 실패 - 메시지 없음: messageId={}", messageId);
             throw new NoSuchElementException("Message with id " + messageId + " not found");
         }
 
         try {
             messageRepository.deleteById(messageId);
 
-            log.info("메시지 삭제 완료: messageId={}", messageId);
+            log.info("[MESSAGE_DELETE] 메시지 삭제 완료: messageId={}", messageId);
         } catch (Exception e) {
-            log.error("메시지 삭제 중 예외 발생: messageId={}", messageId, e);
+            log.error("[MESSAGE_DELETE] 메시지 삭제 중 예외 발생: messageId={}", messageId, e);
             throw e;
         }
     }

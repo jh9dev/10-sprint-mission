@@ -39,14 +39,14 @@ public class BasicUserService implements UserService {
         String username = userCreateRequest.username();
         String email = userCreateRequest.email();
 
-        log.debug("사용자 생성 시작: email={}, username={}", email, username);
+        log.debug("[USER_CREATE] 사용자 생성 시작: email={}, username={}", email, username);
 
         if (userRepository.existsByEmail(email)) {
-            log.warn("사용자 생성 실패 - 이메일 중복: email={}", email);
+            log.warn("[USER_CREATE] 사용자 생성 실패 - 이메일 중복: email={}", email);
             throw new IllegalArgumentException("User with email " + email + " already exists");
         }
         if (userRepository.existsByUsername(username)) {
-            log.warn("사용자 생성 실패 - username 중복: username={}", username);
+            log.warn("[USER_CREATE] 사용자 생성 실패 - username 중복: username={}", username);
             throw new IllegalArgumentException(
                     "User with username " + username + " already exists");
         }
@@ -71,11 +71,11 @@ public class BasicUserService implements UserService {
             UserStatus userStatus = new UserStatus(user, now);
 
             userRepository.save(user);
-            log.info("사용자 생성 완료: userId={}, email={}", user.getId(), user.getEmail());
+            log.info("[USER_CREATE] 사용자 생성 완료: userId={}, email={}", user.getId(), user.getEmail());
 
             return userMapper.toDto(user);
         } catch (Exception e) {
-            log.error("사용자 생성 중 예외 발생: email={}, username={}", email, username, e);
+            log.error("[USER_CREATE] 사용자 생성 중 예외 발생: email={}, username={}", email, username, e);
             throw e;
         }
     }
@@ -100,12 +100,12 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
             Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
-        log.debug("사용자 수정 시작: userId={}", userId);
+        log.debug("[USER_UPDATE] 사용자 수정 시작: userId={}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(
                         () -> {
-                            log.warn("사용자 수정 실패 - 사용자 없음: userId={}", userId);
+                            log.warn("[USER_UPDATE] 사용자 수정 실패 - 사용자 없음: userId={}", userId);
                             return new NoSuchElementException(
                                     "User with id " + userId + " not found");
                         });
@@ -113,11 +113,11 @@ public class BasicUserService implements UserService {
         String newUsername = userUpdateRequest.newUsername();
         String newEmail = userUpdateRequest.newEmail();
         if (userRepository.existsByEmail(newEmail)) {
-            log.warn("사용자 수정 실패 - 이메일 중복: email={}", newEmail);
+            log.warn("[USER_UPDATE] 사용자 수정 실패 - 이메일 중복: email={}", newEmail);
             throw new IllegalArgumentException("User with email " + newEmail + " already exists");
         }
         if (userRepository.existsByUsername(newUsername)) {
-            log.warn("사용자 수정 실패 - username 중복: username={}", newUsername);
+            log.warn("[USER_UPDATE] 사용자 수정 실패 - username 중복: username={}", newUsername);
             throw new IllegalArgumentException(
                     "User with username " + newUsername + " already exists");
         }
@@ -141,10 +141,10 @@ public class BasicUserService implements UserService {
             String newPassword = userUpdateRequest.newPassword();
             user.update(newUsername, newEmail, newPassword, nullableProfile);
 
-            log.info("사용자 수정 완료. userId={}", userId);
+            log.info("[USER_UPDATE] 사용자 수정 완료. userId={}", userId);
             return userMapper.toDto(user);
         } catch (Exception e) {
-            log.error("사용자 수정 중 예외 발생: userId={}", userId, e);
+            log.error("[USER_UPDATE] 사용자 수정 중 예외 발생: userId={}", userId, e);
             throw e;
         }
     }
@@ -152,18 +152,18 @@ public class BasicUserService implements UserService {
     @Transactional
     @Override
     public void delete(UUID userId) {
-        log.debug("사용자 삭제 시작: userId={}", userId);
+        log.debug("[USER_DELETE] 사용자 삭제 시작: userId={}", userId);
 
         if (!userRepository.existsById(userId)) {
-            log.warn("사용자 삭제 실패 - 사용자 없음: userId={}", userId);
+            log.warn("[USER_DELETE] 사용자 삭제 실패 - 사용자 없음: userId={}", userId);
             throw new NoSuchElementException("User with id " + userId + " not found");
         }
 
         try {
             userRepository.deleteById(userId);
-            log.info("사용자 삭제 완료: userId={}", userId);
+            log.info("[USER_DELETE] 사용자 삭제 완료: userId={}", userId);
         } catch (Exception e) {
-            log.error("사용자 삭제 중 예외 발생: userId={}", userId, e);
+            log.error("[USER_DELETE] 사용자 삭제 중 예외 발생: userId={}", userId, e);
             throw e;
         }
     }

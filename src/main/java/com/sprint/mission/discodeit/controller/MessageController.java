@@ -48,7 +48,7 @@ public class MessageController implements MessageApi {
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) {
         int attachmentCount = attachments == null ? 0 : attachments.size();
-        log.debug("메시지 생성 요청: channelId={}, authorId={}, attachmentCount={}",
+        log.debug("[MESSAGE_CREATE] 메시지 생성 요청: channelId={}, authorId={}, attachmentCount={}",
                 messageCreateRequest.channelId(),
                 messageCreateRequest.authorId(),
                 attachmentCount);
@@ -70,7 +70,7 @@ public class MessageController implements MessageApi {
                 .orElse(new ArrayList<>());
         MessageDto createdMessage = messageService.create(messageCreateRequest, attachmentRequests);
 
-        log.debug("메시지 생성 응답: messageId={}", createdMessage.id());
+        log.debug("[MESSAGE_CREATE] 메시지 생성 응답: messageId={}", createdMessage.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdMessage);
@@ -79,11 +79,11 @@ public class MessageController implements MessageApi {
     @PatchMapping(path = "/{messageId}")
     public ResponseEntity<MessageDto> update(@PathVariable("messageId") UUID messageId,
             @Valid @RequestBody MessageUpdateRequest request) {
-        log.debug("메시지 수정 요청: messageId={}", messageId);
+        log.debug("[MESSAGE_UPDATE] 메시지 수정 요청: messageId={}", messageId);
 
         MessageDto updatedMessage = messageService.update(messageId, request);
 
-        log.debug("메시지 수정 응답: messageId={}", messageId);
+        log.debug("[MESSAGE_UPDATE] 메시지 수정 응답: messageId={}", messageId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedMessage);
@@ -91,11 +91,11 @@ public class MessageController implements MessageApi {
 
     @DeleteMapping(path = "/{messageId}")
     public ResponseEntity<Void> delete(@PathVariable("messageId") UUID messageId) {
-        log.debug("메시지 삭제 요청: messageId={}", messageId);
+        log.debug("[MESSAGE_DELETE] 메시지 삭제 요청: messageId={}", messageId);
 
         messageService.delete(messageId);
 
-        log.debug("메시지 삭제 응답: messageId={}", messageId);
+        log.debug("[MESSAGE_DELETE] 메시지 삭제 응답: messageId={}", messageId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();

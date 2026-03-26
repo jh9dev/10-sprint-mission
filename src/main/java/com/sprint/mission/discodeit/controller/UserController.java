@@ -45,14 +45,14 @@ public class UserController implements UserApi {
             @Valid @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
-        log.debug("사용자 생성 요청: email={}, username={}", userCreateRequest.email(),
+        log.debug("[USER_CREATE] 사용자 생성 요청: email={}, username={}", userCreateRequest.email(),
                 userCreateRequest.username());
 
         Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
                 .flatMap(this::resolveProfileRequest);
         UserDto createdUser = userService.create(userCreateRequest, profileRequest);
 
-        log.debug("사용자 생성 응답: userId={}", createdUser.id());
+        log.debug("[USER_CREATE] 사용자 생성 응답: userId={}", createdUser.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdUser);
@@ -68,13 +68,13 @@ public class UserController implements UserApi {
             @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
-        log.debug("사용자 수정 요청: userId={}", userId);
+        log.debug("[USER_UPDATE] 사용자 수정 요청: userId={}", userId);
 
         Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
                 .flatMap(this::resolveProfileRequest);
         UserDto updatedUser = userService.update(userId, userUpdateRequest, profileRequest);
 
-        log.debug("사용자 수정 응답: userId={}", userId);
+        log.debug("[USER_UPDATE] 사용자 수정 응답: userId={}", userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedUser);
@@ -83,11 +83,11 @@ public class UserController implements UserApi {
     @DeleteMapping(path = "/{userId}")
     @Override
     public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
-        log.debug("사용자 삭제 요청: userId={}", userId);
+        log.debug("[USER_DELETE] 사용자 삭제 요청: userId={}", userId);
 
         userService.delete(userId);
 
-        log.debug("사용자 삭제 응답: userId={}", userId);
+        log.debug("[USER_DELETE] 사용자 삭제 응답: userId={}", userId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
