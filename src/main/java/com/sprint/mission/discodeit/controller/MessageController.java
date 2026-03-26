@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentReadException;
 import com.sprint.mission.discodeit.service.MessageService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -56,14 +57,15 @@ public class MessageController implements MessageApi {
         List<BinaryContentCreateRequest> attachmentRequests = Optional.ofNullable(attachments)
                 .map(files -> files.stream()
                         .map(file -> {
+                            String fileName = file.getOriginalFilename();
                             try {
                                 return new BinaryContentCreateRequest(
-                                        file.getOriginalFilename(),
+                                        fileName,
                                         file.getContentType(),
                                         file.getBytes()
                                 );
                             } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                throw new BinaryContentReadException(fileName, e);
                             }
                         })
                         .toList())

@@ -9,6 +9,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -19,7 +22,6 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -56,16 +58,16 @@ public class BasicMessageService implements MessageService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(
                         () -> {
-                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 채널 없음: channelId={}", channelId);
-                            return new NoSuchElementException(
-                                    "Channel with id " + channelId + " does not exist");
+                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 채널을 찾을 수 없음: channelId={}",
+                                    channelId);
+                            return new ChannelNotFoundException(channelId);
                         });
         User author = userRepository.findById(authorId)
                 .orElseThrow(
                         () -> {
-                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 작성자 없음: authorId={}", authorId);
-                            return new NoSuchElementException(
-                                    "Author with id " + authorId + " does not exist");
+                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 작성자를 찾을 수 없음: authorId={}",
+                                    authorId);
+                            return new UserNotFoundException(authorId);
                         });
 
         try {
@@ -110,8 +112,7 @@ public class BasicMessageService implements MessageService {
         return messageRepository.findById(messageId)
                 .map(messageMapper::toDto)
                 .orElseThrow(
-                        () -> new NoSuchElementException(
-                                "Message with id " + messageId + " not found"));
+                        () -> new MessageNotFoundException(messageId));
     }
 
     @Transactional(readOnly = true)
@@ -141,10 +142,9 @@ public class BasicMessageService implements MessageService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(
                         () -> {
-                            log.warn("[MESSAGE_UPDATE] 메시지 수정 실패 - 메시지 없음: messageId={}",
+                            log.warn("[MESSAGE_UPDATE] 메시지 수정 실패 - 메시지를 찾을 수 없음: messageId={}",
                                     messageId);
-                            return new NoSuchElementException(
-                                    "Message with id " + messageId + " not found");
+                            return new MessageNotFoundException(messageId);
                         });
 
         try {
@@ -164,8 +164,8 @@ public class BasicMessageService implements MessageService {
         log.debug("[MESSAGE_DELETE] 메시지 삭제 시작: messageId={}", messageId);
 
         if (!messageRepository.existsById(messageId)) {
-            log.warn("[MESSAGE_DELETE] 메시지 삭제 실패 - 메시지 없음: messageId={}", messageId);
-            throw new NoSuchElementException("Message with id " + messageId + " not found");
+            log.warn("[MESSAGE_DELETE] 메시지 삭제 실패 - 메시지를 찾을 수 없음: messageId={}", messageId);
+            throw new MessageNotFoundException(messageId);
         }
 
         try {

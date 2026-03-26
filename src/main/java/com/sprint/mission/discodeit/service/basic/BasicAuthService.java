@@ -3,14 +3,16 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.auth.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.user.InvalidCredentialsException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BasicAuthService implements AuthService {
@@ -24,15 +26,20 @@ public class BasicAuthService implements AuthService {
         String username = loginRequest.username();
         String password = loginRequest.password();
 
+        log.debug("[LOGIN] 로그인 처리 시작: username={}", username);
+
         User user = userRepository.findByUsername(username)
-                .orElseThrow(
-                        () -> new NoSuchElementException(
-                                "User with username " + username + " not found"));
+                .orElseThrow(() -> {
+                    log.warn("[LOGIN] 로그인 실패 - 사용자를 찾을 수 없음: username={}", username);
+                    return new InvalidCredentialsException(username);
+                });
 
         if (!user.getPassword().equals(password)) {
-            throw new IllegalArgumentException("Wrong password");
+            log.warn("[LOGIN] 로그인 실패 - 비밀번호가 일치하지 않음: username={}", username);
+            throw new InvalidCredentialsException(username);
         }
 
+        log.info("[LOGIN] 로그인 처리 완료: userId={}, username={}", user.getId(), username);
         return userMapper.toDto(user);
     }
 }

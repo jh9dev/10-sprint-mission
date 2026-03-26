@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UsernameAlreadyExistsException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -14,7 +17,6 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -43,13 +45,13 @@ public class BasicUserService implements UserService {
 
         if (userRepository.existsByEmail(email)) {
             log.warn("[USER_CREATE] 사용자 생성 실패 - 이메일 중복: email={}", email);
-            throw new IllegalArgumentException("User with email " + email + " already exists");
+            throw new UserEmailAlreadyExistsException(email);
         }
         if (userRepository.existsByUsername(username)) {
             log.warn("[USER_CREATE] 사용자 생성 실패 - username 중복: username={}", username);
-            throw new IllegalArgumentException(
-                    "User with username " + username + " already exists");
+            throw new UsernameAlreadyExistsException(username);
         }
+
         try {
             BinaryContent nullableProfile = optionalProfileCreateRequest
                     .map(profileRequest -> {
@@ -82,14 +84,15 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserDto find(UUID userId) {
+        log.debug("[USER_FIND] 사용자 조회: userId={}", userId);
         return userRepository.findById(userId)
                 .map(userMapper::toDto)
-                .orElseThrow(
-                        () -> new NoSuchElementException("User with id " + userId + " not found"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     @Override
     public List<UserDto> findAll() {
+        log.debug("[USER_FIND_ALL] 사용자 목록 조회");
         return userRepository.findAllWithProfileAndStatus()
                 .stream()
                 .map(userMapper::toDto)
@@ -106,20 +109,18 @@ public class BasicUserService implements UserService {
                 .orElseThrow(
                         () -> {
                             log.warn("[USER_UPDATE] 사용자 수정 실패 - 사용자 없음: userId={}", userId);
-                            return new NoSuchElementException(
-                                    "User with id " + userId + " not found");
+                            return new UserNotFoundException(userId);
                         });
 
         String newUsername = userUpdateRequest.newUsername();
         String newEmail = userUpdateRequest.newEmail();
         if (userRepository.existsByEmail(newEmail)) {
             log.warn("[USER_UPDATE] 사용자 수정 실패 - 이메일 중복: email={}", newEmail);
-            throw new IllegalArgumentException("User with email " + newEmail + " already exists");
+            throw new UserEmailAlreadyExistsException(newEmail);
         }
         if (userRepository.existsByUsername(newUsername)) {
             log.warn("[USER_UPDATE] 사용자 수정 실패 - username 중복: username={}", newUsername);
-            throw new IllegalArgumentException(
-                    "User with username " + newUsername + " already exists");
+            throw new UsernameAlreadyExistsException(newUsername);
         }
 
         try {
@@ -156,7 +157,7 @@ public class BasicUserService implements UserService {
 
         if (!userRepository.existsById(userId)) {
             log.warn("[USER_DELETE] 사용자 삭제 실패 - 사용자 없음: userId={}", userId);
-            throw new NoSuchElementException("User with id " + userId + " not found");
+            throw new UserNotFoundException(userId);
         }
 
         try {

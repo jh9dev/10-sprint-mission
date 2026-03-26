@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentReadException;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
@@ -109,7 +110,12 @@ public class UserController implements UserApi {
     public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
             @PathVariable("userId") UUID userId,
             @RequestBody UserStatusUpdateRequest request) {
+        log.debug("[USER_STATUS_UPDATE] 사용자 상태 수정 요청: userId={}", userId);
+
         UserStatusDto updatedUserStatus = userStatusService.updateByUserId(userId, request);
+
+        log.info("[USER_STATUS_UPDATE] 사용자 상태 수정 응답: userId={}, userStatusId={}",
+                userId, updatedUserStatus.id());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedUserStatus);
@@ -118,17 +124,19 @@ public class UserController implements UserApi {
     private Optional<BinaryContentCreateRequest> resolveProfileRequest(MultipartFile profileFile) {
         if (profileFile.isEmpty()) {
             return Optional.empty();
-        } else {
-            try {
-                BinaryContentCreateRequest binaryContentCreateRequest = new BinaryContentCreateRequest(
-                        profileFile.getOriginalFilename(),
-                        profileFile.getContentType(),
-                        profileFile.getBytes()
-                );
-                return Optional.of(binaryContentCreateRequest);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        }
+
+        try {
+            BinaryContentCreateRequest binaryContentCreateRequest = new BinaryContentCreateRequest(
+                    profileFile.getOriginalFilename(),
+                    profileFile.getContentType(),
+                    profileFile.getBytes()
+            );
+            return Optional.of(binaryContentCreateRequest);
+        } catch (IOException e) {
+            log.error("[USER_PROFILE_UPLOAD] 프로필 읽기 실패: fileName={}",
+                    profileFile.getOriginalFilename(), e);
+            throw new BinaryContentReadException(profileFile.getOriginalFilename(), e);
         }
     }
 }
