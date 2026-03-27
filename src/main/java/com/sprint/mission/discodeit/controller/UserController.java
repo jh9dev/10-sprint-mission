@@ -52,8 +52,6 @@ public class UserController implements UserApi {
         Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
                 .flatMap(this::resolveProfileRequest);
         UserDto createdUser = userService.create(userCreateRequest, profileRequest);
-
-        log.debug("[USER_CREATE] 사용자 생성 응답: userId={}", createdUser.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdUser);
@@ -74,8 +72,6 @@ public class UserController implements UserApi {
         Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(profile)
                 .flatMap(this::resolveProfileRequest);
         UserDto updatedUser = userService.update(userId, userUpdateRequest, profileRequest);
-
-        log.debug("[USER_UPDATE] 사용자 수정 응답: userId={}", userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedUser);
@@ -87,8 +83,6 @@ public class UserController implements UserApi {
         log.debug("[USER_DELETE] 사용자 삭제 요청: userId={}", userId);
 
         userService.delete(userId);
-
-        log.debug("[USER_DELETE] 사용자 삭제 응답: userId={}", userId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
@@ -98,8 +92,8 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<List<UserDto>> findAll() {
         log.debug("[USER_FIND_ALL] 유저 목록 조회 요청");
+
         List<UserDto> users = userService.findAll();
-        log.debug("[USER_FIND_ALL] 유저 목록 조회 응답: count={}", users.size());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(users);
@@ -113,9 +107,6 @@ public class UserController implements UserApi {
         log.debug("[USER_STATUS_UPDATE] 사용자 상태 수정 요청: userId={}", userId);
 
         UserStatusDto updatedUserStatus = userStatusService.updateByUserId(userId, request);
-
-        log.info("[USER_STATUS_UPDATE] 사용자 상태 수정 응답: userId={}, userStatusId={}",
-                userId, updatedUserStatus.id());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedUserStatus);
@@ -134,8 +125,6 @@ public class UserController implements UserApi {
             );
             return Optional.of(binaryContentCreateRequest);
         } catch (IOException e) {
-            log.error("[USER_PROFILE_UPLOAD] 프로필 읽기 실패: fileName={}",
-                    profileFile.getOriginalFilename(), e);
             throw new BinaryContentReadException(profileFile.getOriginalFilename(), e);
         }
     }

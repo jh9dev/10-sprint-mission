@@ -71,8 +71,6 @@ public class MessageController implements MessageApi {
                         .toList())
                 .orElse(new ArrayList<>());
         MessageDto createdMessage = messageService.create(messageCreateRequest, attachmentRequests);
-
-        log.debug("[MESSAGE_CREATE] 메시지 생성 응답: messageId={}", createdMessage.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdMessage);
@@ -84,8 +82,6 @@ public class MessageController implements MessageApi {
         log.debug("[MESSAGE_UPDATE] 메시지 수정 요청: messageId={}", messageId);
 
         MessageDto updatedMessage = messageService.update(messageId, request);
-
-        log.debug("[MESSAGE_UPDATE] 메시지 수정 응답: messageId={}", messageId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedMessage);
@@ -96,8 +92,6 @@ public class MessageController implements MessageApi {
         log.debug("[MESSAGE_DELETE] 메시지 삭제 요청: messageId={}", messageId);
 
         messageService.delete(messageId);
-
-        log.debug("[MESSAGE_DELETE] 메시지 삭제 응답: messageId={}", messageId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
@@ -113,8 +107,11 @@ public class MessageController implements MessageApi {
                     sort = "createdAt",
                     direction = Direction.DESC
             ) Pageable pageable) {
+        log.debug("[MESSAGE_FIND_ALL] 메시지 목록 조회 요청: channelId={}, cursor={}", channelId, cursor);
+
         PageResponse<MessageDto> messages = messageService.findAllByChannelId(channelId, cursor,
                 pageable);
+
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(messages);

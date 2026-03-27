@@ -32,9 +32,6 @@ public class BinaryContentController implements BinaryContentApi {
                 binaryContentId);
 
         BinaryContentDto binaryContent = binaryContentService.find(binaryContentId);
-
-        log.debug("[BINARY_CONTENT_FIND] 파일 조회 응답: binaryContentId={}",
-                binaryContentId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(binaryContent);
@@ -48,9 +45,6 @@ public class BinaryContentController implements BinaryContentApi {
 
         List<BinaryContentDto> binaryContents = binaryContentService.findAllByIdIn(
                 binaryContentIds);
-
-        log.debug("[BINARY_CONTENT_FIND_ALL] 파일 목록 조회 응답: count={}",
-                binaryContents.size());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(binaryContents);
@@ -63,10 +57,6 @@ public class BinaryContentController implements BinaryContentApi {
                 binaryContentId);
 
         BinaryContentDto binaryContentDto = binaryContentService.find(binaryContentId);
-        ResponseEntity<?> response = binaryContentStorage.download(binaryContentDto);
-
-        log.info("[BINARY_CONTENT_DOWNLOAD] 파일 다운로드 응답: binaryContentId={}, fileName={}",
-                binaryContentId, binaryContentDto.fileName());
-        return response;
+        return binaryContentStorage.download(binaryContentDto);
     }
 }

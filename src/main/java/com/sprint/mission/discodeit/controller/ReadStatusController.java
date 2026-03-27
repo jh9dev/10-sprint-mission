@@ -36,8 +36,6 @@ public class ReadStatusController implements ReadStatusApi {
                 request.userId(), request.channelId());
 
         ReadStatusDto createdReadStatus = readStatusService.create(request);
-
-        log.info("[READ_STATUS_CREATE] 읽음 상태 생성 완료: readStatusId={}", createdReadStatus.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdReadStatus);
@@ -49,8 +47,6 @@ public class ReadStatusController implements ReadStatusApi {
         log.debug("[READ_STATUS_UPDATE] 읽음 상태 수정 요청: readStatusId={}", readStatusId);
 
         ReadStatusDto updatedReadStatus = readStatusService.update(readStatusId, request);
-
-        log.info("[READ_STATUS_UPDATE] 읽음 상태 수정 완료: readStatusId={}", readStatusId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedReadStatus);
@@ -62,9 +58,6 @@ public class ReadStatusController implements ReadStatusApi {
         log.debug("[READ_STATUS_FIND_ALL] 읽음 상태 목록 조회 요청: userId={}", userId);
 
         List<ReadStatusDto> readStatuses = readStatusService.findAllByUserId(userId);
-
-        log.debug("[READ_STATUS_FIND_ALL] 읽음 상태 목록 조회 응답: userId={}, count={}",
-                userId, readStatuses.size());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(readStatuses);

@@ -34,17 +34,11 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusDto create(UserStatusCreateRequest request) {
         UUID userId = request.userId();
-        log.debug("[USER_STATUS_CREATE] 사용자 상태 생성 시작: userId={}", userId);
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("[USER_STATUS_CREATE] 사용자 상태 생성 실패 - 사용자를 찾을 수 없음: userId={}",
-                            userId);
-                    return new UserNotFoundException(userId);
-                });
+                .orElseThrow(() -> new UserNotFoundException(userId));
         Optional.ofNullable(user.getStatus())
                 .ifPresent(status -> {
-                    log.warn("[USER_STATUS_CREATE] 사용자 상태 생성 실패 - 이미 존재함: userId={}", userId);
                     throw new UserStatusAlreadyExistsException(userId);
                 });
 
@@ -58,7 +52,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusDto find(UUID userStatusId) {
-        log.debug("[USER_STATUS_FIND] 사용자 상태 조회: userStatusId={}", userStatusId);
         return userStatusRepository.findById(userStatusId)
                 .map(userStatusMapper::toDto)
                 .orElseThrow(() -> UserStatusNotFoundException.byUserStatusId(userStatusId));
@@ -66,7 +59,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public List<UserStatusDto> findAll() {
-        log.debug("[USER_STATUS_FIND_ALL] 사용자 상태 목록 조회");
         return userStatusRepository.findAll().stream()
                 .map(userStatusMapper::toDto)
                 .toList();
@@ -76,14 +68,9 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest request) {
         Instant newLastActiveAt = request.newLastActiveAt();
-        log.debug("[USER_STATUS_UPDATE] 사용자 상태 수정 시작: userStatusId={}", userStatusId);
 
         UserStatus userStatus = userStatusRepository.findById(userStatusId)
-                .orElseThrow(() -> {
-                    log.warn("[USER_STATUS_UPDATE] 사용자 상태 수정 실패 - 사용자 상태를 찾을 수 없음: userStatusId={}",
-                            userStatusId);
-                    return UserStatusNotFoundException.byUserStatusId(userStatusId);
-                });
+                .orElseThrow(() -> UserStatusNotFoundException.byUserStatusId(userStatusId));
         userStatus.update(newLastActiveAt);
 
         log.info("[USER_STATUS_UPDATE] 사용자 상태 수정 완료: userStatusId={}", userStatusId);
@@ -94,14 +81,9 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
         Instant newLastActiveAt = request.newLastActiveAt();
-        log.debug("[USER_STATUS_UPDATE] 사용자 기준 상태 수정 시작: userId={}", userId);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> {
-                    log.warn("[USER_STATUS_UPDATE] 사용자 기준 상태 수정 실패 - 사용자 상태를 찾을 수 없음: userId={}",
-                            userId);
-                    return UserStatusNotFoundException.byUserId(userId);
-                });
+                .orElseThrow(() -> UserStatusNotFoundException.byUserId(userId));
         userStatus.update(newLastActiveAt);
 
         log.info("[USER_STATUS_UPDATE] 사용자 기준 상태 수정 완료: userId={}, userStatusId={}",
@@ -112,13 +94,10 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     @Override
     public void delete(UUID userStatusId) {
-        log.debug("[USER_STATUS_DELETE] 사용자 상태 삭제 시작: userStatusId={}", userStatusId);
-
         if (!userStatusRepository.existsById(userStatusId)) {
-            log.warn("[USER_STATUS_DELETE] 사용자 상태 삭제 실패 - 사용자 상태를 찾을 수 없음: userStatusId={}",
-                    userStatusId);
             throw UserStatusNotFoundException.byUserStatusId(userStatusId);
         }
+
         userStatusRepository.deleteById(userStatusId);
         log.info("[USER_STATUS_DELETE] 사용자 상태 삭제 완료: userStatusId={}", userStatusId);
     }

@@ -33,9 +33,6 @@ public class BasicBinaryContentService implements BinaryContentService {
         byte[] bytes = request.bytes();
         String contentType = request.contentType();
 
-        log.debug("[BINARY_CONTENT_CREATE] 파일 생성 시작: fileName={}, size={}", fileName,
-                bytes.length);
-
         try {
             BinaryContent binaryContent = new BinaryContent(
                     fileName,
@@ -49,7 +46,6 @@ public class BasicBinaryContentService implements BinaryContentService {
                     binaryContent.getId(), fileName);
             return binaryContentMapper.toDto(binaryContent);
         } catch (Exception e) {
-            log.error("[BINARY_CONTENT_CREATE] 파일 생성 중 예외 발생: fileName={}", fileName, e);
             throw new BinaryContentSaveException(fileName, e);
         }
     }
@@ -72,8 +68,6 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public void delete(UUID binaryContentId) {
         if (!binaryContentRepository.existsById(binaryContentId)) {
-            log.warn("[BINARY_CONTENT_DELETE] 파일 삭제 실패 - 파일을 찾을 수 없음: binaryContentId={}",
-                    binaryContentId);
             throw new BinaryContentNotFoundException(binaryContentId);
         }
 
@@ -81,8 +75,6 @@ public class BasicBinaryContentService implements BinaryContentService {
             binaryContentRepository.deleteById(binaryContentId);
             log.info("[BINARY_CONTENT_DELETE] 파일 삭제 완료: binaryContentId={}", binaryContentId);
         } catch (Exception e) {
-            log.error("[BINARY_CONTENT_DELETE] 파일 삭제 중 예외 발생: binaryContentId={}", binaryContentId,
-                    e);
             throw new BinaryContentDeleteException(binaryContentId, e);
         }
     }

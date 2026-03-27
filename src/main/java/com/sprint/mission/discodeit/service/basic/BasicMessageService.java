@@ -50,60 +50,40 @@ public class BasicMessageService implements MessageService {
             List<BinaryContentCreateRequest> binaryContentCreateRequests) {
         UUID channelId = messageCreateRequest.channelId();
         UUID authorId = messageCreateRequest.authorId();
-        int attachmentCount = binaryContentCreateRequests.size();
-
-        log.debug("[MESSAGE_CREATE] 메시지 생성 시작: channelId={}, authorId={}, attachmentCount={}",
-                channelId, authorId, attachmentCount);
 
         Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(
-                        () -> {
-                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 채널을 찾을 수 없음: channelId={}",
-                                    channelId);
-                            return new ChannelNotFoundException(channelId);
-                        });
+                .orElseThrow(() -> new ChannelNotFoundException(channelId));
         User author = userRepository.findById(authorId)
-                .orElseThrow(
-                        () -> {
-                            log.warn("[MESSAGE_CREATE] 메시지 생성 실패 - 작성자를 찾을 수 없음: authorId={}",
-                                    authorId);
-                            return new UserNotFoundException(authorId);
-                        });
+                .orElseThrow(() -> new UserNotFoundException(authorId));
 
-        try {
-            List<BinaryContent> attachments = binaryContentCreateRequests.stream()
-                    .map(attachmentRequest -> {
-                        String fileName = attachmentRequest.fileName();
-                        String contentType = attachmentRequest.contentType();
-                        byte[] bytes = attachmentRequest.bytes();
+        List<BinaryContent> attachments = binaryContentCreateRequests.stream()
+                .map(attachmentRequest -> {
+                    String fileName = attachmentRequest.fileName();
+                    String contentType = attachmentRequest.contentType();
+                    byte[] bytes = attachmentRequest.bytes();
 
-                        BinaryContent binaryContent = new BinaryContent(fileName,
-                                (long) bytes.length,
-                                contentType);
-                        binaryContentRepository.save(binaryContent);
-                        binaryContentStorage.put(binaryContent.getId(), bytes);
-                        return binaryContent;
-                    })
-                    .toList();
+                    BinaryContent binaryContent = new BinaryContent(fileName,
+                            (long) bytes.length,
+                            contentType);
+                    binaryContentRepository.save(binaryContent);
+                    binaryContentStorage.put(binaryContent.getId(), bytes);
+                    return binaryContent;
+                })
+                .toList();
 
-            String content = messageCreateRequest.content();
-            Message message = new Message(
-                    content,
-                    channel,
-                    author,
-                    attachments
-            );
+        String content = messageCreateRequest.content();
+        Message message = new Message(
+                content,
+                channel,
+                author,
+                attachments
+        );
 
-            messageRepository.save(message);
+        messageRepository.save(message);
 
-            log.info("[MESSAGE_CREATE] 메시지 생성 완료: messageId={}, channelId={}, authorId={}",
-                    message.getId(), channelId, authorId);
-            return messageMapper.toDto(message);
-        } catch (Exception e) {
-            log.error("[MESSAGE_CREATE] 메시지 생성 중 예외 발생: channelId={}, authorId={}", channelId,
-                    authorId, e);
-            throw e;
-        }
+        log.info("[MESSAGE_CREATE] 메시지 생성 완료: messageId={}, channelId={}, authorId={}",
+                message.getId(), channelId, authorId);
+        return messageMapper.toDto(message);
     }
 
     @Transactional(readOnly = true)
@@ -137,44 +117,24 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto update(UUID messageId, MessageUpdateRequest request) {
         String newContent = request.newContent();
-        log.debug("[MESSAGE_UPDATE] 메시지 수정 시작: messageId={}", messageId);
 
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(
-                        () -> {
-                            log.warn("[MESSAGE_UPDATE] 메시지 수정 실패 - 메시지를 찾을 수 없음: messageId={}",
-                                    messageId);
-                            return new MessageNotFoundException(messageId);
-                        });
+                .orElseThrow(() -> new MessageNotFoundException(messageId));
 
-        try {
-            message.update(newContent);
+        message.update(newContent);
 
-            log.info("[MESSAGE_UPDATE] 메시지 수정 완료: messageId={}", messageId);
-            return messageMapper.toDto(message);
-        } catch (Exception e) {
-            log.error("[MESSAGE_UPDATE] 메시지 수정 중 예외 발생: messageId={}", messageId, e);
-            throw e;
-        }
+        log.info("[MESSAGE_UPDATE] 메시지 수정 완료: messageId={}", messageId);
+        return messageMapper.toDto(message);
     }
 
     @Transactional
     @Override
     public void delete(UUID messageId) {
-        log.debug("[MESSAGE_DELETE] 메시지 삭제 시작: messageId={}", messageId);
-
         if (!messageRepository.existsById(messageId)) {
-            log.warn("[MESSAGE_DELETE] 메시지 삭제 실패 - 메시지를 찾을 수 없음: messageId={}", messageId);
             throw new MessageNotFoundException(messageId);
         }
 
-        try {
-            messageRepository.deleteById(messageId);
-
-            log.info("[MESSAGE_DELETE] 메시지 삭제 완료: messageId={}", messageId);
-        } catch (Exception e) {
-            log.error("[MESSAGE_DELETE] 메시지 삭제 중 예외 발생: messageId={}", messageId, e);
-            throw e;
-        }
+        messageRepository.deleteById(messageId);
+        log.info("[MESSAGE_DELETE] 메시지 삭제 완료: messageId={}", messageId);
     }
 }

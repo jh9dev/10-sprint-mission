@@ -37,8 +37,6 @@ public class ChannelController implements ChannelApi {
         log.debug("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 요청: name={}", request.name());
 
         ChannelDto createdChannel = channelService.create(request);
-
-        log.debug("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 응답: channelId={}", createdChannel.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdChannel);
@@ -51,8 +49,6 @@ public class ChannelController implements ChannelApi {
                 request.participantIds().size());
 
         ChannelDto createdChannel = channelService.create(request);
-
-        log.debug("[PRIVATE_CHANNEL_CREATE] 비공개 채널 생성 응답: channelId={}", createdChannel.id());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdChannel);
@@ -64,8 +60,6 @@ public class ChannelController implements ChannelApi {
         log.debug("[CHANNEL_UPDATE] 채널 수정 요청: channelId={}", channelId);
 
         ChannelDto updatedChannel = channelService.update(channelId, request);
-
-        log.debug("[CHANNEL_UPDATE] 채널 수정 응답: channelId={}", channelId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedChannel);
@@ -76,8 +70,6 @@ public class ChannelController implements ChannelApi {
         log.debug("[CHANNEL_DELETE] 채널 삭제 요청: channelId={}", channelId);
 
         channelService.delete(channelId);
-
-        log.debug("[CHANNEL_DELETE] 채널 삭제 응답: channelId={}", channelId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
@@ -88,9 +80,6 @@ public class ChannelController implements ChannelApi {
         log.debug("[CHANNEL_FIND_ALL] 채널 목록 조회 요청: userId={}", userId);
 
         List<ChannelDto> channels = channelService.findAllByUserId(userId);
-
-        log.debug("[CHANNEL_FIND_ALL] 채널 목록 조회 응답: userId={}, count={}",
-                userId, channels.size());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(channels);

@@ -39,47 +39,32 @@ public class BasicChannelService implements ChannelService {
         String name = request.name();
         String description = request.description();
 
-        log.debug("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 시작: name={}", name);
+        Channel channel = new Channel(ChannelType.PUBLIC, name, description);
+        channelRepository.save(channel);
 
-        try {
-            Channel channel = new Channel(ChannelType.PUBLIC, name, description);
-
-            channelRepository.save(channel);
-
-            log.info("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 완료: channelId={}, name={}", channel.getId(),
-                    name);
-            return channelMapper.toDto(channel);
-        } catch (Exception e) {
-            log.error("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 중 예외 발생: name={}", name, e);
-            throw e;
-        }
+        log.info("[PUBLIC_CHANNEL_CREATE] 공개 채널 생성 완료: channelId={}, name={}", channel.getId(),
+                name);
+        return channelMapper.toDto(channel);
     }
 
     @Transactional
     @Override
     public ChannelDto create(PrivateChannelCreateRequest request) {
         int participantCount = request.participantIds().size();
-        log.debug("[PRIVATE_CHANNEL_CREATE] 비공개 채널 생성 시작: participantCount={}", participantCount);
 
-        try {
-            Channel channel = new Channel(ChannelType.PRIVATE, null, null);
-            channelRepository.save(channel);
+        Channel channel = new Channel(ChannelType.PRIVATE, null, null);
+        channelRepository.save(channel);
 
-            List<ReadStatus> readStatuses = userRepository.findAllById(request.participantIds())
-                    .stream()
-                    .map(user -> new ReadStatus(user, channel, channel.getCreatedAt()))
-                    .toList();
-            readStatusRepository.saveAll(readStatuses);
+        List<ReadStatus> readStatuses = userRepository.findAllById(request.participantIds())
+                .stream()
+                .map(user -> new ReadStatus(user, channel, channel.getCreatedAt()))
+                .toList();
+        readStatusRepository.saveAll(readStatuses);
 
-            log.info("[PRIVATE_CHANNEL_CREATE] 비공개 채널 생성 완료: channelId={}, participantCount={}",
-                    channel.getId(),
-                    participantCount);
-            return channelMapper.toDto(channel);
-        } catch (Exception e) {
-            log.error("[PRIVATE_CHANNEL_CREATE] 비공개 채널 생성 중 예외 발생: participantCount={}",
-                    participantCount, e);
-            throw e;
-        }
+        log.info("[PRIVATE_CHANNEL_CREATE] 비공개 채널 생성 완료: channelId={}, participantCount={}",
+                channel.getId(),
+                participantCount);
+        return channelMapper.toDto(channel);
     }
 
     @Transactional(readOnly = true)
@@ -110,50 +95,29 @@ public class BasicChannelService implements ChannelService {
         String newName = request.newName();
         String newDescription = request.newDescription();
 
-        log.debug("[CHANNEL_UPDATE] 채널 수정 시작: channelId={}", channelId);
-
         Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(
-                        () -> {
-                            log.warn("[CHANNEL_UPDATE] 채널 수정 실패 - 채널을 찾을 수 없음: channelId={}",
-                                    channelId);
-                            return new ChannelNotFoundException(channelId);
-                        });
+                .orElseThrow(() -> new ChannelNotFoundException(channelId));
         if (channel.getType().equals(ChannelType.PRIVATE)) {
-            log.warn("[CHANNEL_UPDATE] 채널 수정 실패 - 비공개 채널 수정 불가: channelId={}", channelId);
             throw new PrivateChannelUpdateException(channelId);
         }
 
-        try {
-            channel.update(newName, newDescription);
+        channel.update(newName, newDescription);
 
-            log.info("[CHANNEL_UPDATE] 채널 수정 완료: channelId={}", channelId);
-            return channelMapper.toDto(channel);
-        } catch (Exception e) {
-            log.error("[CHANNEL_UPDATE] 채널 수정 중 예외 발생: channelId={}", channelId, e);
-            throw e;
-        }
+        log.info("[CHANNEL_UPDATE] 채널 수정 완료: channelId={}", channelId);
+        return channelMapper.toDto(channel);
     }
 
     @Transactional
     @Override
     public void delete(UUID channelId) {
-        log.debug("[CHANNEL_DELETE] 채널 삭제 시작: channelId={}", channelId);
-
         if (!channelRepository.existsById(channelId)) {
-            log.warn("[CHANNEL_DELETE] 채널 삭제 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
             throw new ChannelNotFoundException(channelId);
         }
 
-        try {
-            messageRepository.deleteAllByChannelId(channelId);
-            readStatusRepository.deleteAllByChannelId(channelId);
-            channelRepository.deleteById(channelId);
+        messageRepository.deleteAllByChannelId(channelId);
+        readStatusRepository.deleteAllByChannelId(channelId);
+        channelRepository.deleteById(channelId);
 
-            log.info("[CHANNEL_DELETE] 채널 삭제 완료: channelId={}", channelId);
-        } catch (Exception e) {
-            log.error("[CHANNEL_DELETE] 채널 삭제 중 예외 발생: channelId={}", channelId, e);
-            throw e;
-        }
+        log.info("[CHANNEL_DELETE] 채널 삭제 완료: channelId={}", channelId);
     }
 }

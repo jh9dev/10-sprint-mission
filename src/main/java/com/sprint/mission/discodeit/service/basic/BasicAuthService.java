@@ -26,16 +26,10 @@ public class BasicAuthService implements AuthService {
         String username = loginRequest.username();
         String password = loginRequest.password();
 
-        log.debug("[LOGIN] 로그인 처리 시작: username={}", username);
-
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn("[LOGIN] 로그인 실패 - 사용자를 찾을 수 없음: username={}", username);
-                    return new InvalidCredentialsException(username);
-                });
+                .orElseThrow(() -> new InvalidCredentialsException(username));
 
         if (!user.getPassword().equals(password)) {
-            log.warn("[LOGIN] 로그인 실패 - 비밀번호가 일치하지 않음: username={}", username);
             throw new InvalidCredentialsException(username);
         }
 
