@@ -11,6 +11,7 @@ public record ReadStatusCreateRequest(
         @NotNull(message = "채널을 확인할 수 없습니다.")
         UUID channelId,
 
+        @NotNull(message = "마지막 읽은 시각을 확인할 수 없습니다.")
         Instant lastReadAt
 ) {
 

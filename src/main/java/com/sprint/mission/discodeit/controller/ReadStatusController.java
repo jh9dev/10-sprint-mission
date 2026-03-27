@@ -45,7 +45,7 @@ public class ReadStatusController implements ReadStatusApi {
 
     @PatchMapping(path = "/{readStatusId}")
     public ResponseEntity<ReadStatusDto> update(@PathVariable("readStatusId") UUID readStatusId,
-            @RequestBody ReadStatusUpdateRequest request) {
+            @Valid @RequestBody ReadStatusUpdateRequest request) {
         log.debug("[READ_STATUS_UPDATE] 읽음 상태 수정 요청: readStatusId={}", readStatusId);
 
         ReadStatusDto updatedReadStatus = readStatusService.update(readStatusId, request);

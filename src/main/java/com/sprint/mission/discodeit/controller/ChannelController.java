@@ -60,7 +60,7 @@ public class ChannelController implements ChannelApi {
 
     @PatchMapping(path = "/{channelId}")
     public ResponseEntity<ChannelDto> update(@PathVariable("channelId") UUID channelId,
-            @RequestBody PublicChannelUpdateRequest request) {
+            @Valid @RequestBody PublicChannelUpdateRequest request) {
         log.debug("[CHANNEL_UPDATE] 채널 수정 요청: channelId={}", channelId);
 
         ChannelDto updatedChannel = channelService.update(channelId, request);
