@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.exception;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 @Schema(description = "애플리케이션 공통 에러 코드")
 public enum ErrorCode {
 
@@ -86,11 +88,4 @@ public enum ErrorCode {
         this.message = message;
     }
 
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
-    }
-
-    public String getMessage() {
-        return message;
-    }
 }
