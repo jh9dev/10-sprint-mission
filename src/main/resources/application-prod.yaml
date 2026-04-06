@@ -1,20 +1,25 @@
-spring:
-  config:
-    activate:
-      on-profile: prod
-  boot:
-    admin:
-      client:
-        url: ${SPRING_BOOT_ADMIN_CLIENT_URL}
-  datasource:
-    driver-class-name: ${PROD_DB_DRIVER:org.postgresql.Driver}
-    url: ${PROD_DB_URL}
-    username: ${PROD_DB_USERNAME}
-    password: ${PROD_DB_PASSWORD}
-
 server:
-  port: ${SERVER_PORT:8081}
+  port: 80
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
 
 logging:
   level:
     com.sprint.mission.discodeit: info
+    org.hibernate.SQL: info
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  info:
+    env:
+      enabled: false
