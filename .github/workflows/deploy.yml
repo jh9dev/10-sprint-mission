@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  ECS_REGION: ${{ vars.ECS_REGION }}
+  ECS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
   ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
   ECS_SERVICE: ${{ vars.ECS_SERVICE }}
