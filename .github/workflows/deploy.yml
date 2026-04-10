@@ -67,6 +67,7 @@ jobs:
         run: |
           aws ecs describe-task-definition \
             --task-definition ${ECS_TASK_DEFINITION} \
+            --region ${AWS_REGION} \
             --query taskDefinition \
             > task-def.json
 
@@ -88,6 +89,7 @@ jobs:
 
           aws ecs register-task-definition \
             --cli-input-json file://new-task-def.json \
+            --region ${AWS_REGION} \
             --query "taskDefinition.taskDefinitionArn" \
             --output text > task-arn.txt
 
@@ -96,11 +98,13 @@ jobs:
           aws ecs update-service \
             --cluster ${ECS_CLUSTER} \
             --service ${ECS_SERVICE} \
-            --desired-count 0
+            --desired-count 0 \
+            --region ${AWS_REGION}
 
           aws ecs wait services-stable \
             --cluster ${ECS_CLUSTER} \
-            --services ${ECS_SERVICE}
+            --services ${ECS_SERVICE} \
+            --region ${AWS_REGION}
 
       - name: 새 버전 배포
         run: |
@@ -110,8 +114,10 @@ jobs:
             --cluster ${ECS_CLUSTER} \
             --service ${ECS_SERVICE} \
             --task-definition ${TASK_ARN} \
-            --desired-count 1
+            --desired-count 1 \
+            --region ${AWS_REGION}
 
           aws ecs wait services-stable \
             --cluster ${ECS_CLUSTER} \
-            --services ${ECS_SERVICE}
+            --services ${ECS_SERVICE} \
+            --region ${AWS_REGION}
