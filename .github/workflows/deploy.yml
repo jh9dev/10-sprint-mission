@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECS_REGION: ${{ vars.ECS_REGION }}
   ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
   ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
   ECS_SERVICE: ${{ vars.ECS_SERVICE }}
@@ -58,7 +58,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ env.ECS_REGION }}
 
       - name: jq 설치
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -67,7 +67,7 @@ jobs:
         run: |
           aws ecs describe-task-definition \
             --task-definition ${ECS_TASK_DEFINITION} \
-            --region ${AWS_REGION} \
+            --region ${ECS_REGION} \
             --query taskDefinition \
             > task-def.json
 
@@ -89,7 +89,7 @@ jobs:
 
           aws ecs register-task-definition \
             --cli-input-json file://new-task-def.json \
-            --region ${AWS_REGION} \
+            --region ${ECS_REGION} \
             --query "taskDefinition.taskDefinitionArn" \
             --output text > task-arn.txt
 
@@ -99,12 +99,12 @@ jobs:
             --cluster ${ECS_CLUSTER} \
             --service ${ECS_SERVICE} \
             --desired-count 0 \
-            --region ${AWS_REGION}
+            --region ${ECS_REGION}
 
           aws ecs wait services-stable \
             --cluster ${ECS_CLUSTER} \
             --services ${ECS_SERVICE} \
-            --region ${AWS_REGION}
+            --region ${ECS_REGION}
 
       - name: 새 버전 배포
         run: |
@@ -115,9 +115,9 @@ jobs:
             --service ${ECS_SERVICE} \
             --task-definition ${TASK_ARN} \
             --desired-count 1 \
-            --region ${AWS_REGION}
+            --region ${ECS_REGION}
 
           aws ecs wait services-stable \
             --cluster ${ECS_CLUSTER} \
             --services ${ECS_SERVICE} \
-            --region ${AWS_REGION}
+            --region ${ECS_REGION}
